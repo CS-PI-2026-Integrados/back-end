@@ -3,6 +3,13 @@ spring:
     name: sicape-api
   jackson:
     default-property-inclusion: non_null
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update
 
 server:
   port: 8080
