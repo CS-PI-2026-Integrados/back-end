@@ -20,7 +20,7 @@ public final class Cpf implements TaxId {
         value = value.trim().replaceAll("\\D", "");
 
         if (value.isBlank() || !validate(value)) {
-            throw new IllegalArgumentException("Cpf inválido: " + value);
+            throw new IllegalArgumentException("O CPF informado não é válido");
         }
 
         this.value = value;

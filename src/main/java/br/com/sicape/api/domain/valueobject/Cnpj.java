@@ -20,7 +20,7 @@ public final class Cnpj implements TaxId {
         value = value.trim().replaceAll("\\D", "");
 
         if (value.isBlank() || !validate(value)) {
-            throw new IllegalArgumentException("Cnpj inválido: " + value);
+            throw new IllegalArgumentException("O CNPJ informado não é válido.");
         }
 
         this.value = value;
@@ -32,7 +32,7 @@ public final class Cnpj implements TaxId {
 
     private boolean validate(String value)
     {
-        if (value.length() != 11) {
+        if (value.length() != 14) {
             return false;
         }
 
