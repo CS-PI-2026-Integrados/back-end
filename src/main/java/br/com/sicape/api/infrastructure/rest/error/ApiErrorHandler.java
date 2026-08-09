@@ -74,7 +74,8 @@ public class ApiErrorHandler {
 
         return new ApiErrorDebug(
             exception.getClass().getName(),
-            exception.getMessage()
+            exception.getMessage(),
+            Arrays.stream(exception.getStackTrace()).map(StackTraceElement::toString).collect(Collectors.toList())
         );
     }
 }
