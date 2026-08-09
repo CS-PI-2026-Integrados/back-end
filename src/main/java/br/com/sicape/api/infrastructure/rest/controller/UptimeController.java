@@ -1,4 +1,4 @@
-package br.com.sicape.api.infraestructure.rest;
+package br.com.sicape.api.infrastructure.rest.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
