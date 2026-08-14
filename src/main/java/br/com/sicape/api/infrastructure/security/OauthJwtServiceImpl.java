@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 
 import br.com.sicape.api.application.oauth.OauthJwtService;
 import br.com.sicape.api.domain.entity.Session;
-import br.com.sicape.api.domain.entity.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
@@ -35,13 +34,13 @@ public class OauthJwtServiceImpl implements OauthJwtService {
     }
 
     @Override
-    public String createAccessToken(User user, Session session) {
+    public String createAccessToken(Session session) {
 
         Instant now = Instant.now();
 
         return Jwts.builder()
             .issuer(issuer)
-            .subject(user.getUuid().toString())
+            .subject(session.getUser().getUuid().toString())
             .id(session.getUuid().toString())
             .claim("type", "access")
             .issuedAt(Date.from(now))

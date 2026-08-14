@@ -1,12 +1,7 @@
 package br.com.sicape.api.application.oauth.login;
 
-import java.time.Duration;
-import java.time.Instant;
-import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
 import java.util.Optional;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -31,7 +26,7 @@ public class CreateSessionUseCase {
 
     public CreateSessionResponse execute(CreateSessionRequest request)
     {
-        Optional<User> optionalUser = userRepository.findByCpf(request.cpf());
+        Optional<User> optionalUser = userRepository.findByCpf(request.clientId());
 
         if (optionalUser.isEmpty()) {
             throw new InvalidCredentialsException();
@@ -39,7 +34,7 @@ public class CreateSessionUseCase {
 
         User user = optionalUser.get();
         
-        if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
+        if (!passwordEncoder.matches(request.clientSecret(), user.getPasswordHash())) {
             throw new InvalidCredentialsException();
         }
 
@@ -50,7 +45,8 @@ public class CreateSessionUseCase {
         sessionRepository.save(session);
 
         return new CreateSessionResponse(
-            oauthJwtService.createAccessToken(user, session),
+            "Bearer",
+            oauthJwtService.createAccessToken(session),
             oauthJwtService.createRefreshToken(session),
             oauthJwtService.getAccessTokenDuration().toSeconds()
         );
