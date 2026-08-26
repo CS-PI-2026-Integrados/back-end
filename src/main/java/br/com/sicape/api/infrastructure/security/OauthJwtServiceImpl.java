@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
+import java.util.Map;
 
 import javax.crypto.SecretKey;
 
@@ -43,6 +44,15 @@ public class OauthJwtServiceImpl implements OauthJwtService {
             .subject(session.getUser().getUuid().toString())
             .id(session.getUuid().toString())
             .claim("type", "access")
+            .claim("user", Map.of(
+                "id", session.getUser().getUuid().toString(),
+                "name", session.getUser().getName(),
+                "cpf", session.getUser().getCpf().value()
+            ))
+            .claim("judicialDistrict", Map.of(
+                "id", session.getUser().getDistrict().getUuid().toString(),
+                "name", session.getUser().getDistrict().getName()
+            ))
             .issuedAt(Date.from(now))
             .expiration(Date.from(now.plus(accessTokenDuration)))
             .signWith(getKey())
