@@ -20,7 +20,9 @@ import br.com.sicape.api.application.oauth.refresh.RefreshSessionResponse;
 import br.com.sicape.api.application.oauth.refresh.RefreshSessionUseCase;
 import br.com.sicape.api.domain.entity.JudicialDistrict;
 import br.com.sicape.api.domain.entity.User;
+import br.com.sicape.api.domain.repository.ConvictedRepository;
 import br.com.sicape.api.domain.repository.JudicialDistrictRepository;
+import br.com.sicape.api.domain.repository.JudicialProcessRepository;
 import br.com.sicape.api.domain.repository.SessionRepository;
 import br.com.sicape.api.domain.repository.UserRepository;
 import br.com.sicape.api.domain.valueobject.Cpf;
@@ -57,6 +59,12 @@ class AuthenticationIntegrationTest {
     private SessionRepository sessionRepository;
 
     @Autowired
+    private ConvictedRepository convictedRepository;
+
+    @Autowired
+    private JudicialProcessRepository judicialProcessRepository;
+
+    @Autowired
     private UserRepository userRepository;
 
     @Autowired
@@ -64,9 +72,7 @@ class AuthenticationIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        sessionRepository.deleteAll();
-        userRepository.deleteAll();
-        judicialDistrictRepository.deleteAll();
+        clearDatabase();
 
         JudicialDistrict district = new JudicialDistrict();
         district.setName("Comarca de teste");
@@ -82,7 +88,13 @@ class AuthenticationIntegrationTest {
 
     @AfterEach
     void tearDown() {
+        clearDatabase();
+    }
+
+    private void clearDatabase() {
         sessionRepository.deleteAll();
+        convictedRepository.deleteAll();
+        judicialProcessRepository.deleteAll();
         userRepository.deleteAll();
         judicialDistrictRepository.deleteAll();
     }
