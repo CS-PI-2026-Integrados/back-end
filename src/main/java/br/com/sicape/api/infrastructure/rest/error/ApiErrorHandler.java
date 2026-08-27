@@ -17,6 +17,7 @@ import org.springframework.web.method.annotation.HandlerMethodValidationExceptio
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 
+import br.com.sicape.api.domain.exception.ConflictException;
 import br.com.sicape.api.domain.exception.DomainException;
 import br.com.sicape.api.domain.exception.ValidationException;
 import br.com.sicape.api.infrastructure.settings.Settings;
@@ -40,7 +41,9 @@ public class ApiErrorHandler {
             ? validation.getFields().stream()
                 .map(field -> new ApiFieldError(field.field(), field.message()))
                 .toList()
-            : List.of();
+            : (exception instanceof ConflictException conflict && conflict.getField() != null
+                ? List.of(new ApiFieldError(conflict.getField(), conflict.getMessage()))
+                : List.of());
 
         return buildResponse(
             exception.getHttpStatus(),

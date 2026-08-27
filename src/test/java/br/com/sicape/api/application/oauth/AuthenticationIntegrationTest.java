@@ -81,6 +81,7 @@ class AuthenticationIntegrationTest {
         User user = new User();
         user.setName("Usuário de teste");
         user.setCpf(CPF);
+        user.setEmail("teste@sicape.local");
         user.setPasswordHash(passwordEncoder.encode(PASSWORD));
         user.setDistrict(district);
         userRepository.save(user);
