@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import br.com.sicape.api.application.oauth.OauthJwtService;
 import br.com.sicape.api.domain.entity.Session;
@@ -24,6 +25,7 @@ public class CreateSessionUseCase {
     private final PasswordEncoder passwordEncoder;
     private final OauthJwtService oauthJwtService;
 
+    @Transactional
     public CreateSessionResponse execute(CreateSessionRequest request)
     {
         Optional<User> optionalUser = userRepository.findByCpf(request.clientId());
