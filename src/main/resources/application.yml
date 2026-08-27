@@ -1,0 +1,34 @@
+spring:
+  application:
+    name: sicape-api
+
+  profiles:
+    active: ${ENVIRONMENT_MODE}
+
+  jackson:
+    default-property-inclusion: non_null
+    property-naming-strategy: SNAKE_CASE
+
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
+
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+jwt:
+  issuer: sicape-api
+  secret: ${JWT_SECRET}
+  access-token-duration: 15m
