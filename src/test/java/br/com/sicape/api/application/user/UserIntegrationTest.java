@@ -15,6 +15,8 @@ import br.com.sicape.api.application.oauth.AuthContext;
 import br.com.sicape.api.application.user.dto.request.CreateUserRequest;
 import br.com.sicape.api.application.user.dto.response.UserResponse;
 import br.com.sicape.api.application.user.usecase.CreateUserUseCase;
+import br.com.sicape.api.application.user.usecase.GetUserUseCase;
+import br.com.sicape.api.application.user.usecase.ListUsersUseCase;
 import br.com.sicape.api.domain.entity.JudicialDistrict;
 import br.com.sicape.api.domain.entity.User;
 import br.com.sicape.api.domain.enums.UserRole;
@@ -42,6 +44,12 @@ class UserIntegrationTest {
 
     @Autowired
     private CreateUserUseCase createUserUseCase;
+
+    @Autowired
+    private ListUsersUseCase listUsersUseCase;
+
+    @Autowired
+    private GetUserUseCase getUserUseCase;
 
     @Autowired
     private UserRepository userRepository;
@@ -180,5 +188,61 @@ class UserIntegrationTest {
         assertThatThrownBy(() -> createUserUseCase.execute(request, authContext))
             .isInstanceOf(ConflictException.class)
             .hasMessageContaining("Já existe um usuário cadastrado com este CPF.");
+    }
+
+    @Test
+    void shouldListUsersWithPaginationAndFilter() {
+        AuthContext authContext = new AuthContext(adminUser, district, null);
+
+        // Filter by 'admin'
+        var response = listUsersUseCase.execute("admin", 0, 10, authContext);
+
+        assertThat(response).isNotNull();
+        assertThat(response.totalElements()).isEqualTo(1);
+        assertThat(response.content().get(0).name()).isEqualTo("Administrador");
+
+        // Filter by 'oper'
+        var responseOper = listUsersUseCase.execute("oper", 0, 10, authContext);
+        assertThat(responseOper.totalElements()).isEqualTo(1);
+        assertThat(responseOper.content().get(0).name()).isEqualTo("Operador");
+
+        // No filter
+        var responseAll = listUsersUseCase.execute(null, 0, 10, authContext);
+        assertThat(responseAll.totalElements()).isEqualTo(2);
+    }
+
+    @Test
+    void shouldRejectListWhenNotAdmin() {
+        AuthContext authContext = new AuthContext(operatorUser, district, null);
+
+        assertThatThrownBy(() -> listUsersUseCase.execute(null, 0, 10, authContext))
+            .isInstanceOf(ForbiddenException.class);
+    }
+
+    @Test
+    void shouldGetUserById() {
+        AuthContext authContext = new AuthContext(adminUser, district, null);
+
+        var response = getUserUseCase.execute(operatorUser.getUuid(), authContext);
+
+        assertThat(response).isNotNull();
+        assertThat(response.name()).isEqualTo("Operador");
+        assertThat(response.email()).isEqualTo("operator@sicape.local");
+    }
+
+    @Test
+    void shouldRejectGetWhenNotAdmin() {
+        AuthContext authContext = new AuthContext(operatorUser, district, null);
+
+        assertThatThrownBy(() -> getUserUseCase.execute(adminUser.getUuid(), authContext))
+            .isInstanceOf(ForbiddenException.class);
+    }
+
+    @Test
+    void shouldThrowNotFoundWhenUserDoesNotExist() {
+        AuthContext authContext = new AuthContext(adminUser, district, null);
+
+        assertThatThrownBy(() -> getUserUseCase.execute(java.util.UUID.randomUUID(), authContext))
+            .isInstanceOf(br.com.sicape.api.domain.exception.ResourceNotFoundException.class);
     }
 }
