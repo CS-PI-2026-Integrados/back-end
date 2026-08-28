@@ -16,6 +16,7 @@ import br.com.sicape.api.application.user.dto.request.CreateUserRequest;
 import br.com.sicape.api.application.user.dto.request.UpdateUserRequest;
 import br.com.sicape.api.application.user.dto.response.UserResponse;
 import br.com.sicape.api.application.user.usecase.CreateUserUseCase;
+import br.com.sicape.api.application.user.usecase.DeleteUserUseCase;
 import br.com.sicape.api.application.user.usecase.GetUserUseCase;
 import br.com.sicape.api.application.user.usecase.ListUsersUseCase;
 import br.com.sicape.api.application.user.usecase.UpdateUserUseCase;
@@ -55,6 +56,9 @@ class UserIntegrationTest {
 
     @Autowired
     private UpdateUserUseCase updateUserUseCase;
+
+    @Autowired
+    private DeleteUserUseCase deleteUserUseCase;
 
     @Autowired
     private UserRepository userRepository;
@@ -312,5 +316,41 @@ class UserIntegrationTest {
 
         assertThatThrownBy(() -> updateUserUseCase.execute(java.util.UUID.randomUUID(), request, authContext))
                 .isInstanceOf(br.com.sicape.api.domain.exception.ResourceNotFoundException.class);
+    }
+
+    @Test
+    void shouldSoftDeleteUserSuccessfully() {
+        AuthContext authContext = new AuthContext(adminUser, district, null);
+        
+        deleteUserUseCase.execute(operatorUser.getUuid(), authContext);
+        
+        User saved = userRepository.findByEmail("operator@sicape.local").orElseThrow();
+        assertThat(saved.isActive()).isFalse();
+    }
+
+    @Test
+    void shouldRejectSoftDeleteWhenNotAdmin() {
+        AuthContext authContext = new AuthContext(operatorUser, district, null);
+
+        assertThatThrownBy(() -> deleteUserUseCase.execute(adminUser.getUuid(), authContext))
+            .isInstanceOf(ForbiddenException.class)
+            .hasMessageContaining("Apenas administradores podem remover usuários.");
+    }
+
+    @Test
+    void shouldRejectSoftDeleteOfOwnUser() {
+        AuthContext authContext = new AuthContext(adminUser, district, null);
+
+        assertThatThrownBy(() -> deleteUserUseCase.execute(adminUser.getUuid(), authContext))
+            .isInstanceOf(ForbiddenException.class)
+            .hasMessageContaining("Você não pode remover seu próprio usuário.");
+    }
+
+    @Test
+    void shouldThrowNotFoundWhenDeletingNonExistentUser() {
+        AuthContext authContext = new AuthContext(adminUser, district, null);
+
+        assertThatThrownBy(() -> deleteUserUseCase.execute(java.util.UUID.randomUUID(), authContext))
+            .isInstanceOf(br.com.sicape.api.domain.exception.ResourceNotFoundException.class);
     }
 }

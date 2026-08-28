@@ -35,6 +35,10 @@ public class CreateSessionUseCase {
         }
 
         User user = optionalUser.get();
+
+        if (!user.isActive()) {
+            throw new br.com.sicape.api.domain.exception.ForbiddenException("Usuário inativo. Procure o administrador.");
+        }
         
         if (!passwordEncoder.matches(request.clientSecret(), user.getPasswordHash())) {
             throw new InvalidCredentialsException();
