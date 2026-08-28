@@ -13,10 +13,12 @@ import org.springframework.test.context.ActiveProfiles;
 
 import br.com.sicape.api.application.oauth.AuthContext;
 import br.com.sicape.api.application.user.dto.request.CreateUserRequest;
+import br.com.sicape.api.application.user.dto.request.UpdateUserRequest;
 import br.com.sicape.api.application.user.dto.response.UserResponse;
 import br.com.sicape.api.application.user.usecase.CreateUserUseCase;
 import br.com.sicape.api.application.user.usecase.GetUserUseCase;
 import br.com.sicape.api.application.user.usecase.ListUsersUseCase;
+import br.com.sicape.api.application.user.usecase.UpdateUserUseCase;
 import br.com.sicape.api.domain.entity.JudicialDistrict;
 import br.com.sicape.api.domain.entity.User;
 import br.com.sicape.api.domain.enums.UserRole;
@@ -30,14 +32,14 @@ import br.com.sicape.api.domain.repository.UserRepository;
 import br.com.sicape.api.domain.valueobject.Cpf;
 
 @SpringBootTest(properties = {
-    "spring.datasource.url=jdbc:h2:mem:user-integration;MODE=MySQL;NON_KEYWORDS=USER,VALUE;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE",
-    "spring.datasource.username=sa",
-    "spring.datasource.password=",
-    "spring.datasource.driver-class-name=org.h2.Driver",
-    "spring.jpa.hibernate.ddl-auto=create-drop",
-    "jwt.secret=chave-de-teste-com-pelo-menos-32-bytes",
-    "jwt.issuer=sicape-api",
-    "jwt.access-token-duration=15m"
+        "spring.datasource.url=jdbc:h2:mem:user-integration;MODE=MySQL;NON_KEYWORDS=USER,VALUE;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE",
+        "spring.datasource.username=sa",
+        "spring.datasource.password=",
+        "spring.datasource.driver-class-name=org.h2.Driver",
+        "spring.jpa.hibernate.ddl-auto=create-drop",
+        "jwt.secret=chave-de-teste-com-pelo-menos-32-bytes",
+        "jwt.issuer=sicape-api",
+        "jwt.access-token-duration=15m"
 })
 @ActiveProfiles("development")
 class UserIntegrationTest {
@@ -50,6 +52,9 @@ class UserIntegrationTest {
 
     @Autowired
     private GetUserUseCase getUserUseCase;
+
+    @Autowired
+    private UpdateUserUseCase updateUserUseCase;
 
     @Autowired
     private UserRepository userRepository;
@@ -118,12 +123,11 @@ class UserIntegrationTest {
         AuthContext authContext = new AuthContext(adminUser, district, null);
 
         CreateUserRequest request = new CreateUserRequest(
-            "Novo Operador",
-            "59982564099",
-            "novo.operador@sicape.local",
-            "SenhaValida123",
-            UserRole.OPERATOR
-        );
+                "Novo Operador",
+                "59982564099",
+                "novo.operador@sicape.local",
+                "SenhaValida123",
+                UserRole.OPERATOR);
 
         UserResponse response = createUserUseCase.execute(request, authContext);
 
@@ -144,16 +148,15 @@ class UserIntegrationTest {
         AuthContext authContext = new AuthContext(operatorUser, district, null);
 
         CreateUserRequest request = new CreateUserRequest(
-            "Outro Operador",
-            "59982564099",
-            "outro.operador@sicape.local",
-            "SenhaValida123",
-            UserRole.OPERATOR
-        );
+                "Outro Operador",
+                "59982564099",
+                "outro.operador@sicape.local",
+                "SenhaValida123",
+                UserRole.OPERATOR);
 
         assertThatThrownBy(() -> createUserUseCase.execute(request, authContext))
-            .isInstanceOf(ForbiddenException.class)
-            .hasMessageContaining("Apenas administradores");
+                .isInstanceOf(ForbiddenException.class)
+                .hasMessageContaining("Apenas administradores");
     }
 
     @Test
@@ -161,16 +164,15 @@ class UserIntegrationTest {
         AuthContext authContext = new AuthContext(adminUser, district, null);
 
         CreateUserRequest request = new CreateUserRequest(
-            "Duplicado Email",
-            "59982564099",
-            "admin@sicape.local",
-            "SenhaValida123",
-            UserRole.OPERATOR
-        );
+                "Duplicado Email",
+                "59982564099",
+                "admin@sicape.local",
+                "SenhaValida123",
+                UserRole.OPERATOR);
 
         assertThatThrownBy(() -> createUserUseCase.execute(request, authContext))
-            .isInstanceOf(ConflictException.class)
-            .hasMessageContaining("Já existe um usuário cadastrado com este e-mail.");
+                .isInstanceOf(ConflictException.class)
+                .hasMessageContaining("Já existe um usuário cadastrado com este e-mail.");
     }
 
     @Test
@@ -178,35 +180,31 @@ class UserIntegrationTest {
         AuthContext authContext = new AuthContext(adminUser, district, null);
 
         CreateUserRequest request = new CreateUserRequest(
-            "Duplicado CPF",
-            "51914372093",
-            "outro@sicape.local",
-            "SenhaValida123",
-            UserRole.OPERATOR
-        );
+                "Duplicado CPF",
+                "51914372093",
+                "outro@sicape.local",
+                "SenhaValida123",
+                UserRole.OPERATOR);
 
         assertThatThrownBy(() -> createUserUseCase.execute(request, authContext))
-            .isInstanceOf(ConflictException.class)
-            .hasMessageContaining("Já existe um usuário cadastrado com este CPF.");
+                .isInstanceOf(ConflictException.class)
+                .hasMessageContaining("Já existe um usuário cadastrado com este CPF.");
     }
 
     @Test
     void shouldListUsersWithPaginationAndFilter() {
         AuthContext authContext = new AuthContext(adminUser, district, null);
 
-        // Filter by 'admin'
         var response = listUsersUseCase.execute("admin", 0, 10, authContext);
 
         assertThat(response).isNotNull();
         assertThat(response.totalElements()).isEqualTo(1);
         assertThat(response.content().get(0).name()).isEqualTo("Administrador");
 
-        // Filter by 'oper'
         var responseOper = listUsersUseCase.execute("oper", 0, 10, authContext);
         assertThat(responseOper.totalElements()).isEqualTo(1);
         assertThat(responseOper.content().get(0).name()).isEqualTo("Operador");
 
-        // No filter
         var responseAll = listUsersUseCase.execute(null, 0, 10, authContext);
         assertThat(responseAll.totalElements()).isEqualTo(2);
     }
@@ -216,7 +214,7 @@ class UserIntegrationTest {
         AuthContext authContext = new AuthContext(operatorUser, district, null);
 
         assertThatThrownBy(() -> listUsersUseCase.execute(null, 0, 10, authContext))
-            .isInstanceOf(ForbiddenException.class);
+                .isInstanceOf(ForbiddenException.class);
     }
 
     @Test
@@ -235,7 +233,7 @@ class UserIntegrationTest {
         AuthContext authContext = new AuthContext(operatorUser, district, null);
 
         assertThatThrownBy(() -> getUserUseCase.execute(adminUser.getUuid(), authContext))
-            .isInstanceOf(ForbiddenException.class);
+                .isInstanceOf(ForbiddenException.class);
     }
 
     @Test
@@ -243,6 +241,76 @@ class UserIntegrationTest {
         AuthContext authContext = new AuthContext(adminUser, district, null);
 
         assertThatThrownBy(() -> getUserUseCase.execute(java.util.UUID.randomUUID(), authContext))
-            .isInstanceOf(br.com.sicape.api.domain.exception.ResourceNotFoundException.class);
+                .isInstanceOf(br.com.sicape.api.domain.exception.ResourceNotFoundException.class);
+    }
+
+    @Test
+    void shouldUpdateUserSuccessfully() {
+        AuthContext authContext = new AuthContext(adminUser, district, null);
+        UpdateUserRequest request = new UpdateUserRequest("Operador Editado", "editado@sicape.local", null,
+                UserRole.ADMIN);
+
+        UserResponse response = updateUserUseCase.execute(operatorUser.getUuid(), request, authContext);
+
+        assertThat(response.name()).isEqualTo("Operador Editado");
+        assertThat(response.email()).isEqualTo("editado@sicape.local");
+        assertThat(response.role()).isEqualTo(UserRole.ADMIN);
+
+        User saved = userRepository.findByEmail("editado@sicape.local").orElseThrow();
+        assertThat(saved.getPasswordHash()).isEqualTo(operatorUser.getPasswordHash());
+    }
+
+    @Test
+    void shouldUpdateUserSuccessfullyWithPassword() {
+        AuthContext authContext = new AuthContext(adminUser, district, null);
+        UpdateUserRequest request = new UpdateUserRequest("Operador Editado", "operator@sicape.local", "NovaSenha123",
+                UserRole.OPERATOR);
+
+        String oldHash = operatorUser.getPasswordHash();
+        UserResponse response = updateUserUseCase.execute(operatorUser.getUuid(), request, authContext);
+
+        User saved = userRepository.findByEmail("operator@sicape.local").orElseThrow();
+        assertThat(saved.getPasswordHash()).isNotEqualTo(oldHash);
+        assertThat(passwordEncoder.matches("NovaSenha123", saved.getPasswordHash())).isTrue();
+    }
+
+    @Test
+    void shouldRejectUpdateWhenNotAdmin() {
+        AuthContext authContext = new AuthContext(operatorUser, district, null);
+        UpdateUserRequest request = new UpdateUserRequest("Nome", "email@sicape.local", null, UserRole.OPERATOR);
+
+        assertThatThrownBy(() -> updateUserUseCase.execute(adminUser.getUuid(), request, authContext))
+                .isInstanceOf(ForbiddenException.class);
+    }
+
+    @Test
+    void shouldRejectUpdateWithDuplicateEmail() {
+        AuthContext authContext = new AuthContext(adminUser, district, null);
+
+        UpdateUserRequest request = new UpdateUserRequest("Nome", adminUser.getEmail(), null, UserRole.OPERATOR);
+
+        assertThatThrownBy(() -> updateUserUseCase.execute(operatorUser.getUuid(), request, authContext))
+                .isInstanceOf(ConflictException.class)
+                .hasMessageContaining("Já existe um usuário cadastrado com este e-mail.");
+    }
+
+    @Test
+    void shouldRejectUpdateOfOwnRole() {
+        AuthContext authContext = new AuthContext(adminUser, district, null);
+
+        UpdateUserRequest request = new UpdateUserRequest("Admin", adminUser.getEmail(), null, UserRole.OPERATOR);
+
+        assertThatThrownBy(() -> updateUserUseCase.execute(adminUser.getUuid(), request, authContext))
+                .isInstanceOf(ForbiddenException.class)
+                .hasMessageContaining("Você não pode alterar seu próprio nível de acesso.");
+    }
+
+    @Test
+    void shouldThrowNotFoundWhenUpdatingNonExistentUser() {
+        AuthContext authContext = new AuthContext(adminUser, district, null);
+        UpdateUserRequest request = new UpdateUserRequest("Nome", "email@sicape.local", null, UserRole.OPERATOR);
+
+        assertThatThrownBy(() -> updateUserUseCase.execute(java.util.UUID.randomUUID(), request, authContext))
+                .isInstanceOf(br.com.sicape.api.domain.exception.ResourceNotFoundException.class);
     }
 }
