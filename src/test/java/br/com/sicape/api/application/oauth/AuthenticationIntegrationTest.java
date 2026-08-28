@@ -140,4 +140,16 @@ class AuthenticationIntegrationTest {
         assertThat(oauthJwtService.parse(refresh.accessToken()).getPayload().get("judicialDistrict"))
             .isNotNull();
     }
+
+    @Test
+    void shouldRejectLoginForInactiveUser() {
+        User user = userRepository.findByCpf(CPF).orElseThrow();
+        user.setActive(false);
+        userRepository.save(user);
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> createSessionUseCase.execute(
+            new CreateSessionRequest(CPF, PASSWORD)
+        )).isInstanceOf(br.com.sicape.api.domain.exception.ForbiddenException.class)
+          .hasMessageContaining("Usuário inativo. Procure o administrador.");
+    }
 }
