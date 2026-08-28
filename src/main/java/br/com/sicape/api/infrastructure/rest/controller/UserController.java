@@ -27,6 +27,9 @@ import br.com.sicape.api.application.user.usecase.UpdateUserUseCase;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+import br.com.sicape.api.application.user.usecase.DeleteUserUseCase;
+import org.springframework.web.bind.annotation.DeleteMapping;
+
 @Validated
 @RestController
 @RequiredArgsConstructor
@@ -36,6 +39,7 @@ public class UserController {
     private final ListUsersUseCase listUsersUseCase;
     private final GetUserUseCase getUserUseCase;
     private final UpdateUserUseCase updateUserUseCase;
+    private final DeleteUserUseCase deleteUserUseCase;
 
     @PostMapping
     public ResponseEntity<UserResponse> create(
@@ -71,5 +75,14 @@ public class UserController {
         @AuthenticationPrincipal AuthContext authContext
     ) {
         return ResponseEntity.ok(updateUserUseCase.execute(id, request, authContext));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(
+        @PathVariable UUID id,
+        @AuthenticationPrincipal AuthContext authContext
+    ) {
+        deleteUserUseCase.execute(id, authContext);
+        return ResponseEntity.noContent().build();
     }
 }
