@@ -1,4 +1,4 @@
-package br.com.sicape.api.application.convicted.dto.response;
+package br.com.sicape.api.application.common.dto.response;
 
 import java.util.List;
 

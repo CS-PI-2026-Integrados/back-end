@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import br.com.sicape.api.application.convicted.dto.response.ConvictedListItemResponse;
-import br.com.sicape.api.application.convicted.dto.response.PageResponse;
+import br.com.sicape.api.application.common.dto.response.PageResponse;
 import br.com.sicape.api.application.oauth.AuthContext;
 import br.com.sicape.api.domain.entity.Convicted;
 import br.com.sicape.api.domain.entity.ConvictedProcess;
