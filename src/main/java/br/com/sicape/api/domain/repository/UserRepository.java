@@ -15,6 +15,7 @@ public interface UserRepository extends BaseRepository<User> {
     Optional<User> findByEmail(String email);
     boolean existsByCpf(Cpf cpf);
     boolean existsByEmail(String email);
+    boolean existsByEmailAndUuidNot(String email, java.util.UUID uuid);
 
     @Query("SELECT u FROM User u WHERE " +
            "(:searchTerm IS NULL OR " +
