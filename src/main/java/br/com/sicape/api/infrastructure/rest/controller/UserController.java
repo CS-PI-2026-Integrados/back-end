@@ -9,6 +9,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -17,10 +18,12 @@ import org.springframework.web.bind.annotation.RestController;
 import br.com.sicape.api.application.common.dto.response.PageResponse;
 import br.com.sicape.api.application.oauth.AuthContext;
 import br.com.sicape.api.application.user.dto.request.CreateUserRequest;
+import br.com.sicape.api.application.user.dto.request.UpdateUserRequest;
 import br.com.sicape.api.application.user.dto.response.UserResponse;
 import br.com.sicape.api.application.user.usecase.CreateUserUseCase;
 import br.com.sicape.api.application.user.usecase.GetUserUseCase;
 import br.com.sicape.api.application.user.usecase.ListUsersUseCase;
+import br.com.sicape.api.application.user.usecase.UpdateUserUseCase;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -32,6 +35,7 @@ public class UserController {
     private final CreateUserUseCase createUserUseCase;
     private final ListUsersUseCase listUsersUseCase;
     private final GetUserUseCase getUserUseCase;
+    private final UpdateUserUseCase updateUserUseCase;
 
     @PostMapping
     public ResponseEntity<UserResponse> create(
@@ -58,5 +62,14 @@ public class UserController {
         @AuthenticationPrincipal AuthContext authContext
     ) {
         return ResponseEntity.ok(getUserUseCase.execute(id, authContext));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<UserResponse> update(
+        @PathVariable UUID id,
+        @Valid @RequestBody UpdateUserRequest request,
+        @AuthenticationPrincipal AuthContext authContext
+    ) {
+        return ResponseEntity.ok(updateUserUseCase.execute(id, request, authContext));
     }
 }
