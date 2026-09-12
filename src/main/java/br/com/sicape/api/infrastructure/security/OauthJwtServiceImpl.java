@@ -47,7 +47,8 @@ public class OauthJwtServiceImpl implements OauthJwtService {
             .claim("user", Map.of(
                 "id", session.getUser().getUuid().toString(),
                 "name", session.getUser().getName(),
-                "cpf", session.getUser().getCpf().value()
+                "cpf", session.getUser().getCpf().value(),
+                "role", session.getUser().getRole().getKey()
             ))
             .claim("judicialDistrict", Map.of(
                 "id", session.getUser().getDistrict().getUuid().toString(),
