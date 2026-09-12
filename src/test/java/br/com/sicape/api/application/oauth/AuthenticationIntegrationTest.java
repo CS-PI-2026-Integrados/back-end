@@ -20,6 +20,7 @@ import br.com.sicape.api.application.oauth.refresh.RefreshSessionResponse;
 import br.com.sicape.api.application.oauth.refresh.RefreshSessionUseCase;
 import br.com.sicape.api.domain.entity.JudicialDistrict;
 import br.com.sicape.api.domain.entity.User;
+import br.com.sicape.api.domain.enums.UserRole;
 import br.com.sicape.api.domain.repository.ConvictedRepository;
 import br.com.sicape.api.domain.repository.JudicialDistrictRepository;
 import br.com.sicape.api.domain.repository.JudicialProcessRepository;
@@ -84,6 +85,7 @@ class AuthenticationIntegrationTest {
         user.setEmail("teste@sicape.local");
         user.setPasswordHash(passwordEncoder.encode(PASSWORD));
         user.setDistrict(district);
+        user.setRole(UserRole.ADMIN);
         userRepository.save(user);
     }
 
@@ -122,7 +124,8 @@ class AuthenticationIntegrationTest {
             .isEqualTo(Map.of(
                 "id", userRepository.findByCpf(CPF).orElseThrow().getUuid().toString(),
                 "name", "Usuário de teste",
-                "cpf", CPF.value()
+                "cpf", CPF.value(),
+                "role", "admin"
             ));
         assertThat(oauthJwtService.parse(login.accessToken()).getPayload().get("judicialDistrict"))
             .isEqualTo(Map.of(
