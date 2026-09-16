@@ -13,8 +13,10 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.OneToMany;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
+@Setter
 @Getter
 @NoArgsConstructor
 public class Group extends BaseEntity {
@@ -37,8 +39,8 @@ public class Group extends BaseEntity {
     @Column
     private LocalTime meetingBaseTime;
 
-    @OneToMany(mappedBy = "group")
-    private List<Convicted> convicteds;
+    // @OneToMany(mappedBy = "group")
+    // private List<Convicted> convicteds;
 
     @Column(nullable = true)
     private LocalDate startDate;
@@ -48,4 +50,8 @@ public class Group extends BaseEntity {
 
     @Column(nullable = true)
     private LocalDate realEndDate;
+
+    @OneToMany(mappedBy = "group")
+    @BatchSize(size = 10)
+    private JudicialDistrict district;
 }
