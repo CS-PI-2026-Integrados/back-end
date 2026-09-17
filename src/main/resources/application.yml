@@ -27,6 +27,9 @@ spring:
 
 server:
   port: 8080
+  tomcat:
+    # Drain rejected uploads so clients can receive HTTP 413; multipart limits remain 5/6 MiB.
+    max-swallow-size: -1
   servlet:
     context-path: /api
 

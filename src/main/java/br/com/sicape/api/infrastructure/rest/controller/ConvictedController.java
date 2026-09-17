@@ -4,9 +4,9 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.UUID;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.CacheControl;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -112,12 +112,14 @@ public class ConvictedController {
     }
 
     @GetMapping("/{uuid}/photo")
-    public ResponseEntity<Void> getPhoto(
+    public ResponseEntity<byte[]> getPhoto(
         @PathVariable UUID uuid,
         @AuthenticationPrincipal AuthContext authContext
     ) {
-        return ResponseEntity.status(HttpStatus.FOUND)
-            .location(URI.create(getPhotoUseCase.execute(uuid, authContext)))
-            .build();
+        var photo = getPhotoUseCase.execute(uuid, authContext);
+        return ResponseEntity.ok()
+            .cacheControl(CacheControl.noStore())
+            .contentType(MediaType.parseMediaType(photo.contentType()))
+            .body(photo.bytes());
     }
 }

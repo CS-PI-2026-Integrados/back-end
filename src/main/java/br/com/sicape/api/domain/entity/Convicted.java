@@ -10,10 +10,12 @@ import org.hibernate.annotations.BatchSize;
 
 import br.com.sicape.api.domain.enums.ConvictedStatus;
 import br.com.sicape.api.domain.enums.EmploymentStatus;
+import br.com.sicape.api.domain.enums.MediaAssetKind;
 import br.com.sicape.api.domain.enums.ProcessStatus;
 import br.com.sicape.api.domain.exception.ConflictException;
 import br.com.sicape.api.domain.valueobject.Address;
 import br.com.sicape.api.domain.valueobject.Cpf;
+import br.com.sicape.api.domain.valueobject.Phone;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
@@ -21,8 +23,10 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -40,8 +44,8 @@ public class Convicted extends BaseEntity {
     @Column(nullable = false)
     private LocalDate birthDate;
 
-    @Column(nullable = false, length = 30)
-    private String phone;
+    @Embedded
+    private Phone phone;
 
     @Embedded
     private Address address;
@@ -54,8 +58,9 @@ public class Convicted extends BaseEntity {
     @Column(nullable = false, length = 30)
     private ConvictedStatus status = ConvictedStatus.ACTIVE;
 
-    @Column(length = 500)
-    private String photoUrl;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "photo_asset_id", unique = true)
+    private MediaAsset photo;
 
     private Instant deactivatedAt;
 
@@ -73,7 +78,7 @@ public class Convicted extends BaseEntity {
         String name,
         Cpf cpf,
         LocalDate birthDate,
-        String phone,
+        Phone phone,
         Address address,
         EmploymentStatus employmentStatus,
         JudicialDistrict district
@@ -108,11 +113,11 @@ public class Convicted extends BaseEntity {
         this.birthDate = birthDate;
     }
 
-    public void updatePhone(String phone) {
-        if (phone == null || phone.isBlank()) {
+    public void updatePhone(Phone phone) {
+        if (phone == null) {
             throw new IllegalArgumentException("O telefone é obrigatório");
         }
-        this.phone = phone.trim();
+        this.phone = phone;
     }
 
     public void updateAddress(Address address) {
@@ -139,11 +144,14 @@ public class Convicted extends BaseEntity {
         return processes.stream().anyMatch(link -> link.getProcess().getStatus() == ProcessStatus.ACTIVE);
     }
 
-    public void completePhoto(String photoUrl) {
+    public void completePhoto(MediaAsset photo) {
         if (status == ConvictedStatus.INACTIVE) {
             throw new IllegalStateException("Não é possível alterar a foto de um condenado inativo");
         }
-        this.photoUrl = photoUrl;
+        if (photo == null || photo.getKind() != MediaAssetKind.PHOTO) {
+            throw new IllegalArgumentException("A foto deve ser uma mídia do tipo foto");
+        }
+        this.photo = photo;
     }
 
     public void remove(User user) {

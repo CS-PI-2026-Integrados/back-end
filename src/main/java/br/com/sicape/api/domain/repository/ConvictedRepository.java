@@ -17,11 +17,19 @@ import br.com.sicape.api.domain.enums.ConvictedStatus;
 import br.com.sicape.api.domain.valueobject.Cpf;
 
 public interface ConvictedRepository extends BaseRepository<Convicted> {
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select c from Convicted c where c.uuid = :uuid and c.district = :district and c.status = :status")
+    Optional<Convicted> findForAttendance(
+        @Param("uuid") UUID uuid,
+        @Param("district") JudicialDistrict district,
+        @Param("status") ConvictedStatus status
+    );
+
     boolean existsByCpf(Cpf cpf);
 
     boolean existsByCpfAndUuidNot(Cpf cpf, UUID uuid);
 
-    @EntityGraph(attributePaths = {"processes", "processes.process"})
+    @EntityGraph(attributePaths = {"photo", "processes", "processes.process"})
     Optional<Convicted> findByUuidAndDistrictAndStatusNot(
         UUID uuid,
         JudicialDistrict district,
