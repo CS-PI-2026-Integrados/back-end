@@ -265,18 +265,32 @@ class UserIntegrationTest {
     }
 
     @Test
-    void shouldUpdateUserSuccessfullyWithPassword() {
-        AuthContext authContext = new AuthContext(adminUser, district, null);
-        UpdateUserRequest request = new UpdateUserRequest("Operador Editado", "operator@sicape.local", "NovaSenha123",
-                UserRole.OPERATOR);
+void shouldUpdateUserSuccessfullyWithPassword()
+{
+    AuthContext authContext = new AuthContext(adminUser, district, null);
 
-        String oldHash = operatorUser.getPasswordHash();
-        UserResponse response = updateUserUseCase.execute(operatorUser.getUuid(), request, authContext);
+    UpdateUserRequest request = new UpdateUserRequest(
+        "Operador Editado",
+        "operator@sicape.local",
+        "NovaSenha123",
+        UserRole.OPERATOR
+    );
 
-        User saved = userRepository.findByEmail("operator@sicape.local").orElseThrow();
-        assertThat(saved.getPasswordHash()).isNotEqualTo(oldHash);
-        assertThat(passwordEncoder.matches("NovaSenha123", saved.getPasswordHash())).isTrue();
-    }
+    String oldHash = operatorUser.getPasswordHash();
+
+    UserResponse response = updateUserUseCase.execute(operatorUser.getUuid(), request, authContext);
+
+    assertThat(response.name()).isEqualTo("Operador Editado");
+    assertThat(response.email()).isEqualTo("operator@sicape.local");
+
+    User saved = userRepository
+        .findByEmail("operator@sicape.local")
+        .orElseThrow();
+
+    assertThat(saved.getPasswordHash()).isNotEqualTo(oldHash);
+    assertThat(passwordEncoder.matches("NovaSenha123", saved.getPasswordHash()))
+        .isTrue();
+}
 
     @Test
     void shouldRejectUpdateWhenNotAdmin() {
