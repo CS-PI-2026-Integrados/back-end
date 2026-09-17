@@ -8,6 +8,8 @@ spring:
   jackson:
     default-property-inclusion: non_null
     property-naming-strategy: SNAKE_CASE
+    deserialization:
+      fail-on-numbers-for-enums: true
 
   datasource:
     url: ${DB_URL}
