@@ -10,7 +10,9 @@ import br.com.sicape.api.domain.enums.GroupFrequency;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -19,6 +21,7 @@ import lombok.Setter;
 @Setter
 @Getter
 @NoArgsConstructor
+@Table(name = "reflection_group")
 public class Group extends BaseEntity {
     @Column(nullable = false, length = 255)
     private String name;
@@ -51,7 +54,6 @@ public class Group extends BaseEntity {
     @Column(nullable = true)
     private LocalDate realEndDate;
 
-    @OneToMany(mappedBy = "group")
-    @BatchSize(size = 10)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     private JudicialDistrict district;
 }

@@ -2,14 +2,15 @@ package br.com.sicape.api.infrastructure.rest.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.com.sicape.api.application.group.dto.request.CreateGroupRequest;
+import br.com.sicape.api.application.group.dto.response.GroupResponse;
 import br.com.sicape.api.application.group.usecase.CreateGroupUseCase;
 import br.com.sicape.api.application.oauth.AuthContext;
-import br.com.sicape.api.domain.entity.Group;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -19,7 +20,8 @@ import lombok.RequiredArgsConstructor;
 public class GroupController {
     private final CreateGroupUseCase createUseCase;
     
-    public ResponseEntity<Group> create(
+    @PostMapping
+    public ResponseEntity<GroupResponse> create(
         @Valid
         @RequestBody
         CreateGroupRequest request,

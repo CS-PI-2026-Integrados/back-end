@@ -6,6 +6,7 @@ import java.time.LocalTime;
 import org.springframework.stereotype.Service;
 
 import br.com.sicape.api.application.group.dto.request.CreateGroupRequest;
+import br.com.sicape.api.application.group.dto.response.GroupResponse;
 import br.com.sicape.api.application.oauth.AuthContext;
 import br.com.sicape.api.domain.entity.Group;
 import br.com.sicape.api.domain.enums.GroupFrequency;
@@ -17,7 +18,7 @@ import lombok.RequiredArgsConstructor;
 public class CreateGroupUseCase {
     private final GroupRepository repo;
     
-    public Group execute(
+    public GroupResponse execute(
         CreateGroupRequest request,
         AuthContext auth
     ) {
@@ -36,6 +37,6 @@ public class CreateGroupUseCase {
 
         repo.save(group);
 
-        return group;
+        return GroupResponse.from(group);
     }
 }
