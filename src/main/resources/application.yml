@@ -34,3 +34,8 @@ jwt:
   issuer: sicape-api
   secret: ${JWT_SECRET}
   access-token-duration: 15m
+
+media:
+  storage:
+    provider: ${MEDIA_STORAGE_PROVIDER:local}
+    path: ${MEDIA_STORAGE_PATH:./storage/media}

@@ -6,6 +6,7 @@ target/
 .project
 .settings/
 .env
+/storage/
 .agents
 .review
 docs
