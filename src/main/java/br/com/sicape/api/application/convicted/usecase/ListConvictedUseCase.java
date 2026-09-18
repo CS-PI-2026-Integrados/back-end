@@ -12,7 +12,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import br.com.sicape.api.application.convicted.dto.response.ConvictedListItemResponse;
-import br.com.sicape.api.application.convicted.dto.response.PageResponse;
+import br.com.sicape.api.application.common.dto.response.AddressResponse;
+import br.com.sicape.api.application.common.dto.response.PageResponse;
 import br.com.sicape.api.application.oauth.AuthContext;
 import br.com.sicape.api.domain.entity.Convicted;
 import br.com.sicape.api.domain.entity.ConvictedProcess;
@@ -69,7 +70,9 @@ public class ListConvictedUseCase {
                 convicted.getUuid(),
                 convicted.getName(),
                 convicted.getCpf().masked(),
-                convicted.getPhotoUrl(),
+                convicted.getPhone().value(),
+                AddressResponse.from(convicted.getAddress()),
+                convicted.getEmploymentStatus(),
                 main == null ? null : main.getProcess().getNumber(),
                 main == null ? 0 : counts.getOrDefault(main.getProcess().getUuid(), 0L)
             );

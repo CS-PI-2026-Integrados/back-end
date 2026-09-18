@@ -14,12 +14,12 @@ import br.com.sicape.api.domain.entity.ConvictedProcess;
 import br.com.sicape.api.domain.entity.JudicialDistrict;
 import br.com.sicape.api.domain.entity.JudicialProcess;
 import br.com.sicape.api.domain.enums.EmploymentStatus;
-import br.com.sicape.api.domain.provider.PhotoUrlProvider;
 import br.com.sicape.api.domain.repository.ConvictedRepository;
 import br.com.sicape.api.domain.repository.JudicialDistrictRepository;
 import br.com.sicape.api.domain.repository.JudicialProcessRepository;
 import br.com.sicape.api.domain.valueobject.Address;
 import br.com.sicape.api.domain.valueobject.Cpf;
+import br.com.sicape.api.domain.valueobject.Phone;
 import br.com.sicape.api.infrastructure.persistence.util.DevelopmentData;
 import lombok.RequiredArgsConstructor;
 
@@ -31,7 +31,6 @@ public class ConvictedSeeder implements CommandLineRunner {
     private final JudicialDistrictRepository districtRepo;
     private final JudicialProcessRepository processRepo;
     private final ConvictedRepository convictedRepo;
-    private final PhotoUrlProvider photoUrlProvider;
 
     @Override
     public void run(String... args) {
@@ -52,7 +51,7 @@ public class ConvictedSeeder implements CommandLineRunner {
             "Arthur Morgan",
             Cpf.of("52998224725"),
             LocalDate.of(1980, 6, 15),
-            "(11) 98888-1001",
+            Phone.of("(11) 98888-1001"),
             new Address(
                 "01001000",
                 "Praça da Sé",
@@ -66,7 +65,6 @@ public class ConvictedSeeder implements CommandLineRunner {
             getDistrict(districtUuid)
         );
         convicted.setUuid(uuid);
-        convicted.completePhoto(photoUrlProvider.provide(uuid));
         convicted.replaceProcesses(List.of(
             new ConvictedProcess(convicted, getProcess(200), true),
             new ConvictedProcess(convicted, getProcess(202), false)
@@ -85,7 +83,7 @@ public class ConvictedSeeder implements CommandLineRunner {
             "Sarah Connor",
             Cpf.of("11144477735"),
             LocalDate.of(1985, 5, 13),
-            "(11) 98888-1002",
+            Phone.of("(11) 98888-1002"),
             new Address(
                 "01310100",
                 "Avenida Paulista",
@@ -99,7 +97,6 @@ public class ConvictedSeeder implements CommandLineRunner {
             getDistrict(districtUuid)
         );
         convicted.setUuid(uuid);
-        convicted.completePhoto(photoUrlProvider.provide(uuid));
         convicted.replaceProcesses(List.of(
             new ConvictedProcess(convicted, getProcess(200), true),
             new ConvictedProcess(convicted, getProcess(201), false)
@@ -118,7 +115,7 @@ public class ConvictedSeeder implements CommandLineRunner {
             "Thomas Anderson",
             Cpf.of("12345678909"),
             LocalDate.of(1990, 3, 11),
-            "(11) 98888-1003",
+            Phone.of("(11) 98888-1003"),
             new Address(
                 "04538133",
                 "Rua das Flores",

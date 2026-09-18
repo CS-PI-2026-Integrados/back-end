@@ -2,6 +2,7 @@ package br.com.sicape.api.application.convicted.dto.request;
 
 import java.time.LocalDate;
 
+import br.com.sicape.api.application.common.dto.request.AddressRequest;
 import br.com.sicape.api.domain.enums.EmploymentStatus;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;

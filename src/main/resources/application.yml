@@ -8,6 +8,8 @@ spring:
   jackson:
     default-property-inclusion: non_null
     property-naming-strategy: SNAKE_CASE
+    deserialization:
+      fail-on-numbers-for-enums: true
 
   datasource:
     url: ${DB_URL}
@@ -25,6 +27,9 @@ spring:
 
 server:
   port: 8080
+  tomcat:
+    # Drain rejected uploads so clients can receive HTTP 413; multipart limits remain 5/6 MiB.
+    max-swallow-size: -1
   servlet:
     context-path: /api
 
@@ -32,3 +37,8 @@ jwt:
   issuer: sicape-api
   secret: ${JWT_SECRET}
   access-token-duration: 15m
+
+media:
+  storage:
+    provider: ${MEDIA_STORAGE_PROVIDER:local}
+    path: ${MEDIA_STORAGE_PATH:./storage/media}

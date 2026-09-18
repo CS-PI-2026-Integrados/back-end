@@ -2,6 +2,8 @@ package br.com.sicape.api.application.oauth;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Map;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,6 +20,7 @@ import br.com.sicape.api.application.oauth.refresh.RefreshSessionResponse;
 import br.com.sicape.api.application.oauth.refresh.RefreshSessionUseCase;
 import br.com.sicape.api.domain.entity.JudicialDistrict;
 import br.com.sicape.api.domain.entity.User;
+import br.com.sicape.api.domain.enums.UserRole;
 import br.com.sicape.api.domain.repository.ConvictedRepository;
 import br.com.sicape.api.domain.repository.JudicialDistrictRepository;
 import br.com.sicape.api.domain.repository.JudicialProcessRepository;
@@ -79,8 +82,10 @@ class AuthenticationIntegrationTest {
         User user = new User();
         user.setName("Usuário de teste");
         user.setCpf(CPF);
+        user.setEmail("teste@sicape.local");
         user.setPasswordHash(passwordEncoder.encode(PASSWORD));
         user.setDistrict(district);
+        user.setRole(UserRole.ADMIN);
         userRepository.save(user);
     }
 
@@ -115,11 +120,39 @@ class AuthenticationIntegrationTest {
 
         assertThat(oauthJwtService.parse(login.accessToken()).getPayload().get("type"))
             .isEqualTo("access");
+        assertThat(oauthJwtService.parse(login.accessToken()).getPayload().get("user"))
+            .isEqualTo(Map.of(
+                "id", userRepository.findByCpf(CPF).orElseThrow().getUuid().toString(),
+                "name", "Usuário de teste",
+                "cpf", CPF.value(),
+                "role", "admin"
+            ));
+        assertThat(oauthJwtService.parse(login.accessToken()).getPayload().get("judicialDistrict"))
+            .isEqualTo(Map.of(
+                "id", judicialDistrictRepository.findAll().getFirst().getUuid().toString(),
+                "name", "Comarca de teste"
+            ));
         assertThat(oauthJwtService.parse(login.refreshToken()).getPayload().get("type"))
             .isEqualTo("refresh");
         assertThat(refresh.accessToken()).isNotBlank();
         assertThat(refresh.expiresIn()).isEqualTo(login.expiresIn());
         assertThat(oauthJwtService.parse(refresh.accessToken()).getPayload().get("type"))
             .isEqualTo("access");
+        assertThat(oauthJwtService.parse(refresh.accessToken()).getPayload().get("user"))
+            .isNotNull();
+        assertThat(oauthJwtService.parse(refresh.accessToken()).getPayload().get("judicialDistrict"))
+            .isNotNull();
+    }
+
+    @Test
+    void shouldRejectLoginForInactiveUser() {
+        User user = userRepository.findByCpf(CPF).orElseThrow();
+        user.setActive(false);
+        userRepository.save(user);
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> createSessionUseCase.execute(
+            new CreateSessionRequest(CPF, PASSWORD)
+        )).isInstanceOf(br.com.sicape.api.domain.exception.ForbiddenException.class)
+          .hasMessageContaining("Usuário inativo. Procure o administrador.");
     }
 }

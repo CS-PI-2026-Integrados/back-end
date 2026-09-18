@@ -68,6 +68,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         return;
                     }
 
+                    if (!session.getUser().isActive()) {
+                        SecurityContextHolder.clearContext();
+                        filterChain.doFilter(request, response);
+                        return;
+                    }
+
                     AuthContext authContext = new AuthContext(
                         session.getUser(),
                         session.getUser().getDistrict(),

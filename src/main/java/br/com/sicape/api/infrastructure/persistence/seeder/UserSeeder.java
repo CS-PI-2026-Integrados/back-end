@@ -19,7 +19,7 @@ import br.com.sicape.api.infrastructure.persistence.util.DevelopmentData;
 import lombok.RequiredArgsConstructor;
 
 /**
- * Seeder que cria um usuário de teste para desenvolvimento.
+ * Seeder que cria usuários de teste para desenvolvimento.
  */
 @Component
 @Order(2)
@@ -39,6 +39,7 @@ public class UserSeeder implements CommandLineRunner {
             DevelopmentData.mockUuid(1),
             "Fulano da Silva",
             Cpf.of("51914372093"),
+            "fulano@sicape.local",
             UserRole.ADMIN
         );
         create(
@@ -46,6 +47,7 @@ public class UserSeeder implements CommandLineRunner {
             DevelopmentData.mockUuid(1),
             "Geralt de Rivia",
             Cpf.of("64282587067"),
+            "geralt@sicape.local",
             UserRole.OPERATOR
         );
         create(
@@ -53,12 +55,12 @@ public class UserSeeder implements CommandLineRunner {
             DevelopmentData.mockUuid(1),
             "David Bowie",
             Cpf.of("59982564099"),
+            "david@sicape.local",
             UserRole.OPERATOR
         );
     }
 
-    private void create(UUID uuid, UUID districtUuid, String name, Cpf cpf, UserRole role)
-    {
+    private void create(UUID uuid, UUID districtUuid, String name, Cpf cpf, String email, UserRole role) {
         if (userRepo.findByUuid(uuid).isPresent()) {
             return;
         }
@@ -73,9 +75,12 @@ public class UserSeeder implements CommandLineRunner {
         user.setUuid(uuid);
         user.setCpf(cpf);
         user.setName(name);
+        user.setEmail(email);
         user.setPasswordHash(passwordEncoder.encode(defaultPassword));
         user.setDistrict(optionalDistrict.get());
         user.setRole(role);
+        user.setActive(true);
+        user.setMustChangePassword(false);
 
         userRepo.save(user);
     }

@@ -5,7 +5,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import br.com.sicape.api.application.convicted.dto.request.CreateConvictedRequest;
 import br.com.sicape.api.application.convicted.dto.response.ConvictedResponse;
-import br.com.sicape.api.application.convicted.mapper.ConvictedResponseMapper;
 import br.com.sicape.api.application.oauth.AuthContext;
 import br.com.sicape.api.domain.entity.Convicted;
 import br.com.sicape.api.domain.exception.ConflictException;
@@ -13,17 +12,18 @@ import br.com.sicape.api.domain.exception.ValidationException;
 import br.com.sicape.api.domain.repository.ConvictedRepository;
 import br.com.sicape.api.domain.valueobject.Address;
 import br.com.sicape.api.domain.valueobject.Cpf;
+import br.com.sicape.api.domain.valueobject.Phone;
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class CreateConvictedUseCase {
     private final ConvictedRepository repository;
-    private final ConvictedResponseMapper mapper;
 
     @Transactional
     public ConvictedResponse execute(CreateConvictedRequest request, AuthContext authContext) {
         Cpf cpf = toCpf(request.cpf());
+        Phone phone = toPhone(request.phone());
         if (repository.existsByCpf(cpf)) {
             throw new ConflictException("Já existe um condenado cadastrado com este CPF.");
         }
@@ -39,13 +39,13 @@ public class CreateConvictedUseCase {
             request.name(),
             cpf,
             request.birthDate(),
-            request.phone(),
+            phone,
             address,
             request.employmentStatus(),
             authContext.district()
         );
 
-        return mapper.toResponse(repository.save(convicted));
+        return ConvictedResponse.from(repository.save(convicted));
     }
 
     private Cpf toCpf(String value) {
@@ -53,6 +53,14 @@ public class CreateConvictedUseCase {
             return Cpf.of(value);
         } catch (IllegalArgumentException exception) {
             throw new ValidationException("cpf", exception.getMessage());
+        }
+    }
+
+    private Phone toPhone(String value) {
+        try {
+            return Phone.of(value);
+        } catch (IllegalArgumentException exception) {
+            throw new ValidationException("phone", exception.getMessage());
         }
     }
 }

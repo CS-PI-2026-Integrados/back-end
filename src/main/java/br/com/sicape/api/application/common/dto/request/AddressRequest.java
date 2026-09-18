@@ -1,4 +1,4 @@
-package br.com.sicape.api.application.convicted.dto.request;
+package br.com.sicape.api.application.common.dto.request;
 
 import br.com.sicape.api.domain.valueobject.Address;
 import jakarta.validation.constraints.NotBlank;
