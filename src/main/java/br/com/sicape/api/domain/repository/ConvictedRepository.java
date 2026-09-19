@@ -21,6 +21,11 @@ public interface ConvictedRepository extends BaseRepository<Convicted> {
 
     boolean existsByCpfAndUuidNot(Cpf cpf, UUID uuid);
 
+    List<Convicted> findAllByUuidInAndDistrict(
+        Collection<UUID> uuids,
+        JudicialDistrict district
+    );
+
     @EntityGraph(attributePaths = {"processes", "processes.process"})
     Optional<Convicted> findByUuidAndDistrictAndStatusNot(
         UUID uuid,

@@ -2,15 +2,17 @@ package br.com.sicape.api.domain.entity;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
-
-import org.hibernate.annotations.BatchSize;
 
 import br.com.sicape.api.domain.enums.GroupFrequency;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
@@ -42,8 +44,13 @@ public class Group extends BaseEntity {
     @Column
     private LocalTime meetingBaseTime;
 
-    // @OneToMany(mappedBy = "group")
-    // private List<Convicted> convicteds;
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "reflection_group_convicted",
+        joinColumns = @JoinColumn(name = "group_id"),
+        inverseJoinColumns = @JoinColumn(name = "convicted_id")
+    )
+    private List<Convicted> convicteds = new ArrayList<>();
 
     @Column(nullable = true)
     private LocalDate startDate;

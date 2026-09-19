@@ -1,15 +1,18 @@
 package br.com.sicape.api.application.group.usecase;
 
-import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
 import br.com.sicape.api.application.group.dto.request.CreateGroupRequest;
 import br.com.sicape.api.application.group.dto.response.GroupResponse;
 import br.com.sicape.api.application.oauth.AuthContext;
+import br.com.sicape.api.domain.entity.Convicted;
 import br.com.sicape.api.domain.entity.Group;
-import br.com.sicape.api.domain.enums.GroupFrequency;
+import br.com.sicape.api.domain.exception.ValidationException;
+import br.com.sicape.api.domain.repository.ConvictedRepository;
 import br.com.sicape.api.domain.repository.GroupRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -17,22 +20,37 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor 
 public class CreateGroupUseCase {
     private final GroupRepository repo;
-    
+    private final ConvictedRepository convictedRepository;
+
     public GroupResponse execute(
         CreateGroupRequest request,
         AuthContext auth
     ) {
+        if (request.convictedUuids() == null || request.convictedUuids().isEmpty()) {
+            throw new ValidationException("convictedUuids", "Informe pelo menos um apenado para o grupo");
+        }
+
+        List<UUID> uniqueIds = request.convictedUuids().stream().distinct().toList();
+        if (uniqueIds.size() != request.convictedUuids().size()) {
+            throw new ValidationException("convictedUuids", "A lista de apenados contém UUIDs duplicados");
+        }
+
+        List<Convicted> convicteds = convictedRepository.findAllByUuidInAndDistrict(uniqueIds, auth.district());
+        if (convicteds.size() != uniqueIds.size()) {
+            throw new ValidationException("convictedUuids", "Um ou mais apenados não existem nesta comarca");
+        }
+
         Group group = new Group();
 
         group.setName(request.name());
         group.setDescription(request.description());
-        group.setMinimumMeetingsCount(6);
-        group.setTotalMeetingsCounts(8);
-        group.setFrequency(GroupFrequency.MONTHLY);
-        group.setMeetingBaseTime(LocalTime.now());
-        group.setStartDate(LocalDate.now());
-        group.setPredictedEndDate(LocalDate.now());
-        group.setRealEndDate(LocalDate.now());
+        group.setMinimumMeetingsCount(request.minimumMeetingsCount());
+        group.setTotalMeetingsCounts(request.totalMeetingsCount());
+        group.setFrequency(request.frequency());
+        group.setMeetingBaseTime(request.meetingBaseTime() == null ? null : LocalTime.parse(request.meetingBaseTime()));
+        group.setStartDate(request.startDate());
+        group.setPredictedEndDate(request.predictedEndDate());
+        group.setConvicteds(convicteds);
         group.setDistrict(auth.district());
 
         repo.save(group);
