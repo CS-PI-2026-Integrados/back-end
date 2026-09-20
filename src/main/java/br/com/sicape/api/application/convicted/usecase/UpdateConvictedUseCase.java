@@ -24,6 +24,7 @@ import br.com.sicape.api.domain.exception.ConflictException;
 import br.com.sicape.api.domain.exception.ValidationException;
 import br.com.sicape.api.domain.repository.ConvictedRepository;
 import br.com.sicape.api.domain.repository.JudicialProcessRepository;
+import br.com.sicape.api.domain.enums.ProcessStatus;
 import br.com.sicape.api.domain.valueobject.Cpf;
 import br.com.sicape.api.domain.valueobject.Phone;
 import lombok.RequiredArgsConstructor;
@@ -124,6 +125,9 @@ public class UpdateConvictedUseCase {
             .collect(Collectors.toMap(JudicialProcess::getUuid, Function.identity()));
         if (processes.size() != uniqueIds.size()) {
             throw new ValidationException("processes", "Um ou mais processos não existem nesta comarca");
+        }
+        if (processes.values().stream().anyMatch(process -> process.getStatus() != ProcessStatus.ACTIVE)) {
+            throw new ValidationException("processes", "Somente processos ativos podem ser vinculados");
         }
 
         List<ConvictedProcess> links = new ArrayList<>();
