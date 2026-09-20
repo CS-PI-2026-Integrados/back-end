@@ -36,7 +36,7 @@ public class ListConvictedUseCase {
     ) {
         String search = query == null ? "" : query.trim().toLowerCase();
         String normalizedDigits = search.replaceAll("\\D", "");
-        String digits = normalizedDigits;
+        String digits = normalizedDigits.isBlank() ? null : normalizedDigits;
 
         Page<Convicted> result = repository.search(
             authContext.district(),
