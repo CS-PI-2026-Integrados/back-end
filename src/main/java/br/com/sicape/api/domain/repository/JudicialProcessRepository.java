@@ -31,7 +31,7 @@ public interface JudicialProcessRepository extends BaseRepository<JudicialProces
                     and (
                         :search = ''
                         or lower(process.number) like lower(concat('%', :search, '%'))
-                        or process.normalizedNumber like concat('%', :digits, '%')
+                        or (:digits <> '' and process.normalizedNumber like concat('%', :digits, '%'))
                     )
                 """)
         Page<JudicialProcess> search(
