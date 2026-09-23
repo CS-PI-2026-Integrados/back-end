@@ -11,6 +11,7 @@ import br.com.sicape.api.application.convicted.mapper.ConvictedResponseMapper;
 import br.com.sicape.api.domain.entity.Convicted;
 import br.com.sicape.api.domain.entity.Group;
 import br.com.sicape.api.domain.enums.GroupFrequency;
+import br.com.sicape.api.domain.enums.GroupStatus;
 
 public record GroupResponse(
     UUID uuid,
@@ -18,6 +19,8 @@ public record GroupResponse(
     Instant updatedAt,
     String name,
     String description,
+    String subject,
+    GroupStatus status,
     Integer minimumMeetingsCount,
     Integer totalMeetingsCounts,
     GroupFrequency frequency,
@@ -36,6 +39,8 @@ public record GroupResponse(
             group.getUpdatedAt(),
             group.getName(),
             group.getDescription(),
+            group.getSubject(),
+            group.getStatus(),
             group.getMinimumMeetingsCount(),
             group.getTotalMeetingsCounts(),
             group.getFrequency(),

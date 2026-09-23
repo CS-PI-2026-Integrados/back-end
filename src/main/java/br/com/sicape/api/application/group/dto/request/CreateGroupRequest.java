@@ -10,7 +10,6 @@ import br.com.sicape.api.domain.enums.GroupFrequency;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 
@@ -20,6 +19,9 @@ public record CreateGroupRequest(
 
     @NotBlank(message = "A descrição do grupo é obrigatória")
     String description,
+
+    @NotBlank(message = "O tema do grupo é obrigatório")
+    String subject,
 
     @NotNull(message = "A quantidade total de encontros é obrigatória")
     @Min(value = 1, message = "A quantidade total de encontros deve ser maior que zero")
@@ -46,8 +48,6 @@ public record CreateGroupRequest(
     @JsonFormat(pattern = "yyyy-MM-dd")
     LocalDate predictedEndDate,
 
-    @NotNull(message = "A lista de apenados do grupo é obrigatória")
-    @NotEmpty(message = "Informe pelo menos um apenado para o grupo")
     List<@NotNull(message = "Cada UUID de apenado deve ser informado") UUID> convictedUuids
 ) {
     @AssertTrue(message = "A quantidade mínima de encontros não pode ser maior que o total de encontros")
@@ -59,4 +59,4 @@ public record CreateGroupRequest(
     public boolean isPredictedEndDateValid() {
         return predictedEndDate == null || startDate == null || !predictedEndDate.isBefore(startDate);
     }
-} 
+}

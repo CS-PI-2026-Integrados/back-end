@@ -11,6 +11,7 @@ import br.com.sicape.api.application.group.dto.response.GroupResponse;
 import br.com.sicape.api.application.oauth.AuthContext;
 import br.com.sicape.api.domain.entity.Convicted;
 import br.com.sicape.api.domain.entity.Group;
+import br.com.sicape.api.domain.enums.GroupStatus;
 import br.com.sicape.api.domain.exception.ValidationException;
 import br.com.sicape.api.domain.repository.ConvictedRepository;
 import br.com.sicape.api.domain.repository.GroupRepository;
@@ -26,24 +27,26 @@ public class CreateGroupUseCase {
         CreateGroupRequest request,
         AuthContext auth
     ) {
-        if (request.convictedUuids() == null || request.convictedUuids().isEmpty()) {
-            throw new ValidationException("convictedUuids", "Informe pelo menos um apenado para o grupo");
-        }
-
-        List<UUID> uniqueIds = request.convictedUuids().stream().distinct().toList();
-        if (uniqueIds.size() != request.convictedUuids().size()) {
+        List<UUID> convictedUuids = request.convictedUuids() == null ? List.of() : request.convictedUuids();
+        List<UUID> uniqueIds = convictedUuids.stream().distinct().toList();
+        if (uniqueIds.size() != convictedUuids.size()) {
             throw new ValidationException("convictedUuids", "A lista de apenados contém UUIDs duplicados");
         }
 
-        List<Convicted> convicteds = convictedRepository.findAllByUuidInAndDistrict(uniqueIds, auth.district());
-        if (convicteds.size() != uniqueIds.size()) {
-            throw new ValidationException("convictedUuids", "Um ou mais apenados não existem nesta comarca");
+        List<Convicted> convicteds = List.of();
+        if (!uniqueIds.isEmpty()) {
+            convicteds = convictedRepository.findAllByUuidInAndDistrict(uniqueIds, auth.district());
+            if (convicteds.size() != uniqueIds.size()) {
+                throw new ValidationException("convictedUuids", "Um ou mais apenados não existem nesta comarca");
+            }
         }
 
         Group group = new Group();
 
         group.setName(request.name());
         group.setDescription(request.description());
+        group.setSubject(request.subject());
+        group.setStatus(GroupStatus.PLANNED);
         group.setMinimumMeetingsCount(request.minimumMeetingsCount());
         group.setTotalMeetingsCounts(request.totalMeetingsCount());
         group.setFrequency(request.frequency());

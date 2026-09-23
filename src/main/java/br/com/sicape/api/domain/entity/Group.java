@@ -6,8 +6,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import br.com.sicape.api.domain.enums.GroupFrequency;
+import br.com.sicape.api.domain.enums.GroupStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
@@ -30,6 +32,13 @@ public class Group extends BaseEntity {
 
     @Column(nullable = false, length = 512)
     private String description;
+
+    @Column(nullable = false, length = 255)
+    private String subject;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    private GroupStatus status = GroupStatus.PLANNED;
 
     @Column
     private Integer minimumMeetingsCount;
