@@ -6,9 +6,6 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
 
-import br.com.sicape.api.application.convicted.dto.response.ConvictedResponse;
-import br.com.sicape.api.application.convicted.mapper.ConvictedResponseMapper;
-import br.com.sicape.api.domain.entity.Convicted;
 import br.com.sicape.api.domain.entity.Group;
 import br.com.sicape.api.domain.enums.GroupFrequency;
 import br.com.sicape.api.domain.enums.GroupStatus;
@@ -29,11 +26,9 @@ public record GroupResponse(
     LocalDate startDate,
     LocalDate predictedEndDate,
     LocalDate realEndDate,
-    List<ConvictedResponse> convicteds
+    List<GroupConvictedResponse> convicteds
 ) {
     public static GroupResponse from(Group group) {
-        ConvictedResponseMapper mapper = new ConvictedResponseMapper();
-
         return new GroupResponse(
             group.getUuid(),
             group.getCreatedAt(),
@@ -51,7 +46,11 @@ public record GroupResponse(
             group.getPredictedEndDate(),
             group.getRealEndDate(),
             group.getConvicteds() == null ? List.of() : group.getConvicteds().stream()
-                .map(mapper::toResponse)
+                .map(convicted -> new GroupConvictedResponse(
+                    convicted.getUuid(),
+                    convicted.getName(),
+                    convicted.getCpf().value()
+                ))
                 .toList()
         );
     }
