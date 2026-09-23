@@ -21,6 +21,7 @@ class CreateGroupRequestAssociationTest {
             "Grupo reflexivo",
             "Descrição do grupo",
             "Responsabilizacao",
+            List.of("Ana Beatriz", "Carlos Eduardo"),
             8,
             6,
             "14:30",

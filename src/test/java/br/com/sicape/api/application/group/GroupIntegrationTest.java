@@ -77,6 +77,7 @@ class GroupIntegrationTest {
         );
 
         assertThat(adminResponse.subject()).isEqualTo("Responsabilizacao");
+        assertThat(adminResponse.presenters()).containsExactly("Ana Beatriz", "Carlos Eduardo");
         assertThat(adminResponse.status()).isEqualTo(GroupStatus.PLANNED);
         assertThat(adminResponse.convicteds()).isEmpty();
         assertThat(operatorResponse.status()).isEqualTo(GroupStatus.PLANNED);
@@ -116,6 +117,7 @@ class GroupIntegrationTest {
             name,
             "Descricao do grupo",
             "Responsabilizacao",
+            List.of("Ana Beatriz", "Carlos Eduardo"),
             8,
             6,
             "14:00",

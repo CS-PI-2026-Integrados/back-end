@@ -10,6 +10,7 @@ import br.com.sicape.api.domain.enums.GroupFrequency;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 
@@ -22,6 +23,9 @@ public record CreateGroupRequest(
 
     @NotBlank(message = "O tema do grupo é obrigatório")
     String subject,
+
+    @NotEmpty(message = "Informe pelo menos um ministrante para o grupo")
+    List<@NotBlank(message = "Cada ministrante deve ser informado") String> presenters,
 
     @NotNull(message = "A quantidade total de encontros é obrigatória")
     @Min(value = 1, message = "A quantidade total de encontros deve ser maior que zero")

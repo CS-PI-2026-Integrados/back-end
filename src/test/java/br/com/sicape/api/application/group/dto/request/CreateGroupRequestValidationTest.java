@@ -28,6 +28,7 @@ class CreateGroupRequestValidationTest {
             "",
             "",
             "",
+            List.of(),
             4,
             5,
             "25:99",
@@ -43,6 +44,7 @@ class CreateGroupRequestValidationTest {
             .extracting(ConstraintViolation::getMessage)
             .contains(
                 "O nome do grupo é obrigatório",
+                "Informe pelo menos um ministrante para o grupo",
                 "A descrição do grupo é obrigatória",
                 "A quantidade mínima de encontros não pode ser maior que o total de encontros",
                 "A hora da reunião deve estar no formato H:i",

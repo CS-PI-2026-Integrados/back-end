@@ -2,6 +2,7 @@ package br.com.sicape.api.application.group.usecase;
 
 import java.time.LocalTime;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -50,6 +51,7 @@ public class CreateGroupUseCase {
         group.setName(request.name());
         group.setDescription(request.description());
         group.setSubject(request.subject());
+        group.setPresenters(new ArrayList<>(request.presenters()));
         group.setStatus(GroupStatus.PLANNED);
         group.setMinimumMeetingsCount(request.minimumMeetingsCount());
         group.setTotalMeetingsCounts(request.totalMeetingsCount());

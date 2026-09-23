@@ -8,6 +8,8 @@ import java.util.List;
 import br.com.sicape.api.domain.enums.GroupFrequency;
 import br.com.sicape.api.domain.enums.GroupStatus;
 import jakarta.persistence.Column;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -35,6 +37,14 @@ public class Group extends BaseEntity {
 
     @Column(nullable = false, length = 255)
     private String subject;
+
+    @ElementCollection
+    @CollectionTable(
+        name = "reflection_group_presenter",
+        joinColumns = @JoinColumn(name = "group_id")
+    )
+    @Column(name = "presenter", nullable = false, length = 255)
+    private List<String> presenters = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
