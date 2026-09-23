@@ -12,6 +12,8 @@ import br.com.sicape.api.application.oauth.AuthContext;
 import br.com.sicape.api.domain.entity.Convicted;
 import br.com.sicape.api.domain.entity.Group;
 import br.com.sicape.api.domain.enums.GroupStatus;
+import br.com.sicape.api.domain.enums.UserRole;
+import br.com.sicape.api.domain.exception.ForbiddenException;
 import br.com.sicape.api.domain.exception.ValidationException;
 import br.com.sicape.api.domain.repository.ConvictedRepository;
 import br.com.sicape.api.domain.repository.GroupRepository;
@@ -27,6 +29,8 @@ public class CreateGroupUseCase {
         CreateGroupRequest request,
         AuthContext auth
     ) {
+        validatePermission(auth);
+
         List<UUID> convictedUuids = request.convictedUuids() == null ? List.of() : request.convictedUuids();
         List<UUID> uniqueIds = convictedUuids.stream().distinct().toList();
         if (uniqueIds.size() != convictedUuids.size()) {
@@ -59,5 +63,16 @@ public class CreateGroupUseCase {
         repo.save(group);
 
         return GroupResponse.from(group);
+    }
+
+    private void validatePermission(AuthContext auth) {
+        if (auth == null || auth.user() == null) {
+            throw new ForbiddenException("Apenas administradores e operadores podem cadastrar grupos reflexivos.");
+        }
+
+        UserRole role = auth.user().getRole();
+        if (role != UserRole.ADMIN && role != UserRole.OPERATOR) {
+            throw new ForbiddenException("Apenas administradores e operadores podem cadastrar grupos reflexivos.");
+        }
     }
 }
