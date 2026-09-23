@@ -26,6 +26,7 @@ import br.com.sicape.api.domain.enums.UserRole;
 import br.com.sicape.api.domain.exception.ConflictException;
 import br.com.sicape.api.domain.exception.ForbiddenException;
 import br.com.sicape.api.domain.repository.ConvictedRepository;
+import br.com.sicape.api.domain.repository.GroupRepository;
 import br.com.sicape.api.domain.repository.JudicialDistrictRepository;
 import br.com.sicape.api.domain.repository.JudicialProcessRepository;
 import br.com.sicape.api.domain.repository.SessionRepository;
@@ -73,6 +74,9 @@ class UserIntegrationTest {
     private ConvictedRepository convictedRepository;
 
     @Autowired
+    private GroupRepository groupRepository;
+
+    @Autowired
     private JudicialProcessRepository judicialProcessRepository;
 
     @Autowired
@@ -116,6 +120,7 @@ class UserIntegrationTest {
 
     private void clearDatabase() {
         sessionRepository.deleteAll();
+        groupRepository.deleteAll();
         convictedRepository.deleteAll();
         judicialProcessRepository.deleteAll();
         userRepository.deleteAll();
