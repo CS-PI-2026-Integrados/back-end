@@ -1,6 +1,7 @@
 package br.com.sicape.api.application.convicted.dto.request;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import br.com.sicape.api.application.common.dto.request.AddressRequest;
 import br.com.sicape.api.domain.enums.EmploymentStatus;
@@ -16,5 +17,6 @@ public record CreateConvictedRequest(
     @PastOrPresent(message = "A data de nascimento não pode ser futura") LocalDate birthDate,
     @NotBlank(message = "O telefone é obrigatório") String phone,
     @NotNull(message = "O endereço é obrigatório") @Valid AddressRequest address,
-    EmploymentStatus employmentStatus
+    EmploymentStatus employmentStatus,
+    List<ConvictedProcessRequest> processes
 ) {}
