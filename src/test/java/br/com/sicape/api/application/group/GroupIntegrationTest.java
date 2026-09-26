@@ -11,15 +11,19 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
 import br.com.sicape.api.application.group.dto.request.CreateGroupRequest;
 import br.com.sicape.api.application.group.dto.request.UpdateGroupRequest;
 import br.com.sicape.api.application.group.dto.response.GroupResponse;
 import br.com.sicape.api.application.group.usecase.CreateGroupUseCase;
+import br.com.sicape.api.application.group.usecase.DeleteGroupUseCase;
 import br.com.sicape.api.application.group.usecase.GetGroupUseCase;
+import br.com.sicape.api.application.group.usecase.ListGroupUseCase;
 import br.com.sicape.api.application.group.usecase.UpdateGroupUseCase;
 import br.com.sicape.api.application.oauth.AuthContext;
+import br.com.sicape.api.domain.entity.Convicted;
 import br.com.sicape.api.domain.entity.JudicialDistrict;
 import br.com.sicape.api.domain.entity.User;
 import br.com.sicape.api.domain.enums.GroupFrequency;
@@ -29,7 +33,10 @@ import br.com.sicape.api.domain.exception.ForbiddenException;
 import br.com.sicape.api.domain.exception.ResourceNotFoundException;
 import br.com.sicape.api.domain.exception.ValidationException;
 import br.com.sicape.api.domain.repository.GroupRepository;
+import br.com.sicape.api.domain.repository.ConvictedRepository;
 import br.com.sicape.api.domain.repository.JudicialDistrictRepository;
+import br.com.sicape.api.domain.valueobject.Address;
+import br.com.sicape.api.domain.valueobject.Cpf;
 import br.com.sicape.api.infrastructure.persistence.seeder.GroupSeeder;
 import br.com.sicape.api.infrastructure.persistence.util.DevelopmentData;
 
@@ -52,10 +59,22 @@ class GroupIntegrationTest {
     private GetGroupUseCase getGroupUseCase;
 
     @Autowired
+    private DeleteGroupUseCase deleteGroupUseCase;
+
+    @Autowired
+    private ListGroupUseCase listGroupUseCase;
+
+    @Autowired
     private UpdateGroupUseCase updateGroupUseCase;
 
     @Autowired
     private GroupRepository groupRepository;
+
+    @Autowired
+    private ConvictedRepository convictedRepository;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -71,6 +90,7 @@ class GroupIntegrationTest {
     @BeforeEach
     void setUp() {
         groupRepository.deleteAll();
+        convictedRepository.deleteAll();
         district = districtRepository.findByUuid(DevelopmentData.mockUuid(1))
             .orElseGet(() -> {
                 JudicialDistrict created = new JudicialDistrict();
@@ -122,6 +142,49 @@ class GroupIntegrationTest {
 
         assertThat(found.presenters()).containsExactly("Ana Beatriz", "Carlos Eduardo");
         assertThat(found.convicteds()).isEmpty();
+    }
+
+    @Test
+    void shouldSoftDeleteGroupHideItFromListAndPreserveConvictedLink() {
+        Convicted convicted = convictedRepository.save(new Convicted(
+            "Apenado de teste",
+            Cpf.of("51914372093"),
+            LocalDate.of(1990, 1, 1),
+            "11999999999",
+            new Address("01001000", "Praca da Se", "1", null, "Se", "Sao Paulo", "SP"),
+            null,
+            district
+        ));
+        GroupResponse created = createGroupUseCase.execute(
+            request("Grupo removido", List.of(convicted.getUuid())),
+            auth(UserRole.ADMIN)
+        );
+        Long groupId = groupRepository.findByUuid(created.uuid()).orElseThrow().getId();
+
+        deleteGroupUseCase.execute(created.uuid(), auth(UserRole.OPERATOR));
+
+        assertThat(groupRepository.findByUuid(created.uuid()).orElseThrow().isDeleted()).isTrue();
+        assertThat(listGroupUseCase.execute(null, null, null, 0, 20, auth(UserRole.ADMIN)).content())
+            .noneMatch(group -> group.uuid().equals(created.uuid()));
+        assertThat(jdbcTemplate.queryForObject(
+            "select count(*) from reflection_group_convicted where group_id = ?",
+            Integer.class,
+            groupId
+        )).isEqualTo(1);
+        assertThatThrownBy(() -> getGroupUseCase.execute(created.uuid(), auth(UserRole.ADMIN)))
+            .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenDeletingMissingGroup() {
+        assertThatThrownBy(() -> deleteGroupUseCase.execute(DevelopmentData.mockUuid(999), auth(UserRole.ADMIN)))
+            .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void shouldRejectGroupDeletionWithoutAllowedRole() {
+        assertThatThrownBy(() -> deleteGroupUseCase.execute(DevelopmentData.mockUuid(999), null))
+            .isInstanceOf(ForbiddenException.class);
     }
 
     @Test

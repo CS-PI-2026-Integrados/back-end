@@ -81,6 +81,9 @@ public class Group extends BaseEntity {
     @Column(nullable = true)
     private LocalDate realEndDate;
 
+    @Column(nullable = false)
+    private boolean deleted = false;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     private JudicialDistrict district;
 

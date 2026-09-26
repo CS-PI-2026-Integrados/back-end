@@ -21,6 +21,7 @@ import br.com.sicape.api.application.group.dto.request.UpdateGroupRequest;
 import br.com.sicape.api.application.group.dto.response.GroupListItemResponse;
 import br.com.sicape.api.application.group.dto.response.GroupResponse;
 import br.com.sicape.api.application.group.usecase.CreateGroupUseCase;
+import br.com.sicape.api.application.group.usecase.DeleteGroupUseCase;
 import br.com.sicape.api.application.group.usecase.GetGroupUseCase;
 import br.com.sicape.api.application.group.usecase.ListGroupUseCase;
 import br.com.sicape.api.application.group.usecase.AddConvictedToGroupUseCase;
@@ -44,6 +45,7 @@ public class GroupController {
     private final AddConvictedToGroupUseCase addConvictedUseCase;
     private final RemoveConvictedFromGroupUseCase removeConvictedUseCase;
     private final UpdateGroupUseCase updateUseCase;
+    private final DeleteGroupUseCase deleteUseCase;
 
     @GetMapping
     public PageResponse<GroupListItemResponse> list(
@@ -72,6 +74,15 @@ public class GroupController {
         @AuthenticationPrincipal AuthContext auth
     ) {
         return updateUseCase.execute(groupId, request, auth);
+    }
+
+    @DeleteMapping("/{groupId}")
+    public ResponseEntity<Void> delete(
+        @PathVariable UUID groupId,
+        @AuthenticationPrincipal AuthContext auth
+    ) {
+        deleteUseCase.execute(groupId, auth);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{groupId}/convicted/{convictedId}")

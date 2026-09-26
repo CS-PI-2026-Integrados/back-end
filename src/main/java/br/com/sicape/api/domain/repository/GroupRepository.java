@@ -19,6 +19,7 @@ public interface GroupRepository extends BaseRepository<Group> {
 	@Query(value = """
 		select distinct g from Group g
 		where g.district = :district
+		  and g.deleted = false
 		  and (:name is null or lower(g.name) like lower(concat('%', :name, '%')))
 		  and (:subject is null or lower(g.subject) like lower(concat('%', :subject, '%')))
 		  and (:status is null or g.status = :status)
@@ -26,6 +27,7 @@ public interface GroupRepository extends BaseRepository<Group> {
 		countQuery = """
 		select count(g) from Group g
 		where g.district = :district
+		  and g.deleted = false
 		  and (:name is null or lower(g.name) like lower(concat('%', :name, '%')))
 		  and (:subject is null or lower(g.subject) like lower(concat('%', :subject, '%')))
 		  and (:status is null or g.status = :status)
@@ -41,13 +43,13 @@ public interface GroupRepository extends BaseRepository<Group> {
 	@Query("""
 		select g.uuid as groupUuid, count(c) as participantCount
 		from Group g left join g.convicteds c
-		where g.uuid in :groupUuids
+		where g.deleted = false and g.uuid in :groupUuids
 		group by g.uuid
 		""")
 	List<GroupParticipantCount> countParticipantsByGroupUuids(@Param("groupUuids") List<UUID> groupUuids);
 
 	@EntityGraph(attributePaths = "convicteds")
-	@Query("select g from Group g where g.uuid = :uuid and g.district = :district")
+	@Query("select g from Group g where g.uuid = :uuid and g.district = :district and g.deleted = false")
 	Optional<Group> findByUuidAndDistrict(
 		@Param("uuid") UUID uuid,
 		@Param("district") JudicialDistrict district
