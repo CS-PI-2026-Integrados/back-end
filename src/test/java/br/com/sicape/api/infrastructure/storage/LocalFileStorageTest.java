@@ -21,8 +21,8 @@ class LocalFileStorageTest {
 
     @Test
     void savesExactBytesAndDeletesIdempotently() {
-        var storage = new LocalFileStorage(root);
-        String key = UUID.randomUUID().toString();
+        var storage = new LocalFileStorageImpl(root);
+        String key = "photo/" + UUID.randomUUID();
         byte[] bytes = {1, 3, 5, 7};
         storage.save(key, bytes, "image/jpeg");
         assertThat(storage.read(key)).containsExactly(bytes);
@@ -33,9 +33,9 @@ class LocalFileStorageTest {
 
     @Test
     void neverOverwrites() {
-        String key = UUID.randomUUID().toString();
-        var first = new LocalFileStorage(root);
-        var second = new LocalFileStorage(root);
+        String key = "receipt/" + UUID.randomUUID();
+        var first = new LocalFileStorageImpl(root);
+        var second = new LocalFileStorageImpl(root);
         first.save(key, new byte[]{1}, "image/jpeg");
         assertThatThrownBy(() -> second.save(key, new byte[]{2}, "image/jpeg"))
             .isInstanceOf(FileStorageException.class);
@@ -44,9 +44,9 @@ class LocalFileStorageTest {
 
     @Test
     void concurrentWritersCannotReplaceTheWinner() throws Exception {
-        String key = UUID.randomUUID().toString();
-        var first = new LocalFileStorage(root);
-        var second = new LocalFileStorage(root);
+        String key = "photo/" + UUID.randomUUID();
+        var first = new LocalFileStorageImpl(root);
+        var second = new LocalFileStorageImpl(root);
         var start = new CountDownLatch(1);
         try (var pool = Executors.newFixedThreadPool(2)) {
             var a = pool.submit(() -> saveAfter(start, first, key, (byte) 1));
@@ -59,7 +59,7 @@ class LocalFileStorageTest {
         }
     }
 
-    private boolean saveAfter(CountDownLatch start, LocalFileStorage storage, String key, byte value)
+    private boolean saveAfter(CountDownLatch start, LocalFileStorageImpl storage, String key, byte value)
         throws InterruptedException {
         start.await();
         try {
@@ -72,9 +72,10 @@ class LocalFileStorageTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"../photo.jpg", "/tmp/photo.jpg", "C:\\photo.jpg", "attendance/../receipt.pdf",
-        "attendance/%2e%2e/photo.jpg", "attendance\\fake\\photo.jpg", "", "invalid"})
+        "attendance/%2e%2e/photo.jpg", "attendance\\fake\\photo.jpg", "", "invalid",
+        "media/00000000-0000-0000-0000-000000000001", "00000000-0000-0000-0000-000000000001"})
     void rejectsUnsafeKeysForAllOperations(String key) {
-        var storage = new LocalFileStorage(root);
+        var storage = new LocalFileStorageImpl(root);
         assertThatIllegalArgumentException().isThrownBy(() -> storage.save(key, new byte[]{1}, "image/jpeg"));
         assertThatIllegalArgumentException().isThrownBy(() -> storage.delete(key));
         assertThatIllegalArgumentException().isThrownBy(() -> storage.read(key));

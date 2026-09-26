@@ -15,7 +15,7 @@ class MediaStorageConfigurationTest {
 
     private ApplicationContextRunner context() {
         return new ApplicationContextRunner().withUserConfiguration(MediaStorageConfiguration.class)
-            .withPropertyValues("media.storage.path=" + root.resolve("media"));
+            .withPropertyValues("media.storage.path=" + root.resolve("storage"));
     }
 
     @Test

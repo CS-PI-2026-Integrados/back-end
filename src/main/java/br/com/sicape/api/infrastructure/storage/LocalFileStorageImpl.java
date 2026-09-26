@@ -16,18 +16,22 @@ import br.com.sicape.api.domain.exception.ResourceNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public final class LocalFileStorage implements FileStorage {
+public final class LocalFileStorageImpl implements FileStorage {
     private static final Pattern KEYS = Pattern.compile(
-        "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+        "(?:photo|receipt)/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
     );
 
     private final Path root;
 
-    public LocalFileStorage(Path root) {
+    public LocalFileStorageImpl(Path root) {
         this.root = root.toAbsolutePath().normalize();
         try {
             rejectSymlinks(this.root);
             Files.createDirectories(this.root);
+            rejectSymlinks(this.root.resolve("photo"));
+            rejectSymlinks(this.root.resolve("receipt"));
+            Files.createDirectories(this.root.resolve("photo"));
+            Files.createDirectories(this.root.resolve("receipt"));
         } catch (IOException exception) {
             throw failure(exception);
         }
@@ -57,7 +61,7 @@ public final class LocalFileStorage implements FileStorage {
             if (Files.exists(target, LinkOption.NOFOLLOW_LINKS)) {
                 throw new FileAlreadyExistsException("Arquivo já existe");
             }
-            temporary = Files.createTempFile(root, ".upload-", ".tmp");
+            temporary = Files.createTempFile(target.getParent(), ".upload-", ".tmp");
             Files.write(temporary, content);
             try {
                 Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE);
