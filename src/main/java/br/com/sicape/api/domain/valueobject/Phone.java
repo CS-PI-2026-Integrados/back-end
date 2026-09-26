@@ -32,6 +32,11 @@ public final class Phone {
         return value;
     }
 
+    public String formatted() {
+        return "(" + value.substring(0, 2) + ") " + value.substring(2, value.length() - 4)
+            + "-" + value.substring(value.length() - 4);
+    }
+
     @Override
     public boolean equals(Object object) {
         return object instanceof Phone other && Objects.equals(value, other.value);

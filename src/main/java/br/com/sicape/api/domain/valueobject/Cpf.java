@@ -61,6 +61,11 @@ public final class Cpf implements TaxId {
         return "***." + value.substring(3, 6) + "." + value.substring(6, 9) + "-**";
     }
 
+    public String formatted() {
+        return value.substring(0, 3) + "." + value.substring(3, 6) + "." + value.substring(6, 9)
+            + "-" + value.substring(9);
+    }
+
     @Override
     public boolean equals(Object object) {
         return object instanceof Cpf other && Objects.equals(value, other.value);

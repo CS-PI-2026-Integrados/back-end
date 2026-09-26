@@ -5,6 +5,7 @@ import java.net.URI;
 import java.util.UUID;
 
 import org.springframework.http.CacheControl;
+import org.springframework.http.ContentDisposition;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -61,11 +62,27 @@ public class AttendanceController {
     @GetMapping("/{uuid}/receipt")
     public ResponseEntity<byte[]> getReceipt(
         @PathVariable UUID uuid,
+        @RequestParam(defaultValue = "inline") String disposition,
         @AuthenticationPrincipal AuthContext auth
     ) {
+        var contentDisposition = switch (disposition) {
+            case "inline" -> ContentDisposition.inline();
+            case "attachment" -> ContentDisposition.attachment();
+            default -> throw new ValidationException(
+                "disposition",
+                "Use inline ou attachment"
+            );
+        };
+
         var receipt = getReceipt.execute(uuid, auth);
+
         return ResponseEntity.ok()
             .cacheControl(CacheControl.noStore())
+            .headers(headers -> headers.setContentDisposition(
+                contentDisposition
+                .filename("comprovante-" + uuid + ".pdf")
+                .build()
+            ))
             .contentType(MediaType.parseMediaType(receipt.contentType()))
             .body(receipt.bytes());
     }

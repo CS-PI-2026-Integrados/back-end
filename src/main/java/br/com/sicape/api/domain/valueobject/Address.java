@@ -70,6 +70,13 @@ public class Address {
         );
     }
 
+    public String formatted() {
+        return street + ", " + number
+            + (complement == null ? "" : ", " + complement)
+            + " - " + neighborhood + ", " + city + "/" + state
+            + " - CEP " + zipCode;
+    }
+
     private static String normalizeZipCode(String value) {
         String normalized = required(value, "CEP").replaceAll("\\D", "");
         if (normalized.length() != 8) {

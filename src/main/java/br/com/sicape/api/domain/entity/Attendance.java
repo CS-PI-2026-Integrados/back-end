@@ -57,6 +57,10 @@ public class Attendance extends BaseEntity {
     @JoinColumn(name = "receipt_asset_id", unique = true)
     private MediaAsset receipt;
 
+    @Lob
+    @Column(name = "receipt_snapshot_json", columnDefinition = "LONGTEXT")
+    private String snapshotJson;
+
     public Attendance(
         Convicted convicted,
         JudicialProcess process,
@@ -102,10 +106,17 @@ public class Attendance extends BaseEntity {
         this.photo = photo;
     }
 
-    public void completeReceipt(MediaAsset receipt) {
+    public void completeReceipt(MediaAsset receipt, String snapshotJson) {
+        if (this.receipt != null || this.snapshotJson != null) {
+            throw new IllegalStateException("O comprovante já foi emitido");
+        }
         if (receipt == null || receipt.getKind() != MediaAssetKind.RECEIPT) {
             throw new IllegalArgumentException("O comprovante deve ser uma mídia do tipo recibo");
         }
+        if (snapshotJson == null || snapshotJson.isBlank()) {
+            throw new IllegalArgumentException("O snapshot do comprovante é obrigatório");
+        }
         this.receipt = receipt;
+        this.snapshotJson = snapshotJson;
     }
 }
