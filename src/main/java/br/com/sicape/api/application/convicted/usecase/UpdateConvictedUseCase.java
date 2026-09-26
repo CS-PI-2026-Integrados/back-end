@@ -15,7 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 import br.com.sicape.api.application.convicted.dto.request.ConvictedProcessRequest;
 import br.com.sicape.api.application.convicted.dto.request.UpdateConvictedRequest;
 import br.com.sicape.api.application.convicted.dto.response.ConvictedResponse;
-import br.com.sicape.api.application.convicted.mapper.ConvictedResponseMapper;
 import br.com.sicape.api.application.convicted.service.ConvictedFinder;
 import br.com.sicape.api.application.oauth.AuthContext;
 import br.com.sicape.api.domain.entity.Convicted;
@@ -25,7 +24,9 @@ import br.com.sicape.api.domain.exception.ConflictException;
 import br.com.sicape.api.domain.exception.ValidationException;
 import br.com.sicape.api.domain.repository.ConvictedRepository;
 import br.com.sicape.api.domain.repository.JudicialProcessRepository;
+import br.com.sicape.api.domain.enums.ProcessStatus;
 import br.com.sicape.api.domain.valueobject.Cpf;
+import br.com.sicape.api.domain.valueobject.Phone;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -34,18 +35,25 @@ public class UpdateConvictedUseCase {
     private final ConvictedFinder finder;
     private final ConvictedRepository repository;
     private final JudicialProcessRepository processRepository;
-    private final ConvictedResponseMapper mapper;
 
     @Transactional
     public ConvictedResponse execute(UUID uuid, UpdateConvictedRequest request, AuthContext authContext) {
         Convicted convicted = finder.find(uuid, authContext);
 
         if (request.isNameProvided()) {
-            requireText(request.getName(), "name");
+            String name = request.getName();
+            if (name == null || name.isBlank()) {
+                throw new ValidationException("name", "O campo não pode ser nulo ou vazio");
+            }
             convicted.updateName(request.getName());
         }
         if (request.isCpfProvided()) {
-            Cpf cpf = toCpf(request.getCpf());
+            Cpf cpf;
+            try {
+                cpf = Cpf.of(request.getCpf());
+            } catch (IllegalArgumentException exception) {
+                throw new ValidationException("cpf", exception.getMessage());
+            }
             if (repository.existsByCpfAndUuidNot(cpf, uuid)) {
                 throw new ConflictException("Já existe um condenado cadastrado com este CPF.");
             }
@@ -59,8 +67,13 @@ public class UpdateConvictedUseCase {
             convicted.updateBirthDate(birthDate);
         }
         if (request.isPhoneProvided()) {
-            requireText(request.getPhone(), "phone");
-            convicted.updatePhone(request.getPhone());
+            Phone phone;
+            try {
+                 phone = (Phone.of(request.getPhone()));
+            } catch (IllegalArgumentException exception) {
+                 throw new ValidationException("phone", exception.getMessage());
+            }
+            convicted.updatePhone(phone);
         }
         if (request.isAddressProvided()) {
             if (request.getAddress() == null) {
@@ -79,7 +92,7 @@ public class UpdateConvictedUseCase {
             replaceProcesses(convicted, request.getProcesses(), authContext);
         }
 
-        return mapper.toResponse(repository.save(convicted));
+        return ConvictedResponse.from(repository.save(convicted));
     }
 
     private void replaceProcesses(
@@ -113,6 +126,9 @@ public class UpdateConvictedUseCase {
         if (processes.size() != uniqueIds.size()) {
             throw new ValidationException("processes", "Um ou mais processos não existem nesta comarca");
         }
+        if (processes.values().stream().anyMatch(process -> process.getStatus() != ProcessStatus.ACTIVE)) {
+            throw new ValidationException("processes", "Somente processos ativos podem ser vinculados");
+        }
 
         List<ConvictedProcess> links = new ArrayList<>();
         for (ConvictedProcessRequest item : requested) {
@@ -122,19 +138,5 @@ public class UpdateConvictedUseCase {
         convicted.replaceProcesses(List.of());
         repository.saveAndFlush(convicted);
         convicted.replaceProcesses(links);
-    }
-
-    private Cpf toCpf(String value) {
-        try {
-            return Cpf.of(value);
-        } catch (IllegalArgumentException exception) {
-            throw new ValidationException("cpf", exception.getMessage());
-        }
-    }
-
-    private void requireText(String value, String field) {
-        if (value == null || value.isBlank()) {
-            throw new ValidationException(field, "O campo não pode ser nulo ou vazio");
-        }
     }
 }

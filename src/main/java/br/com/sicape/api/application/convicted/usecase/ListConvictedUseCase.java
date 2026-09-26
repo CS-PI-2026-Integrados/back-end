@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import br.com.sicape.api.application.convicted.dto.response.ConvictedListItemResponse;
-import br.com.sicape.api.application.convicted.dto.response.AddressResponse;
+import br.com.sicape.api.application.common.dto.response.AddressResponse;
 import br.com.sicape.api.application.common.dto.response.PageResponse;
 import br.com.sicape.api.application.oauth.AuthContext;
 import br.com.sicape.api.domain.entity.Convicted;
@@ -20,7 +20,6 @@ import br.com.sicape.api.domain.entity.ConvictedProcess;
 import br.com.sicape.api.domain.enums.ConvictedStatus;
 import br.com.sicape.api.domain.repository.ConvictedRepository;
 import br.com.sicape.api.domain.repository.ProcessConvictedCount;
-import br.com.sicape.api.domain.valueobject.Address;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -71,9 +70,8 @@ public class ListConvictedUseCase {
                 convicted.getUuid(),
                 convicted.getName(),
                 convicted.getCpf().masked(),
-                convicted.getPhotoUrl(),
-                convicted.getPhone(),
-                toAddressResponse(convicted.getAddress()),
+                convicted.getPhone().value(),
+                AddressResponse.from(convicted.getAddress()),
                 convicted.getEmploymentStatus(),
                 main == null ? null : main.getProcess().getNumber(),
                 main == null ? 0 : counts.getOrDefault(main.getProcess().getUuid(), 0L)
@@ -94,17 +92,5 @@ public class ListConvictedUseCase {
             .filter(ConvictedProcess::isPrincipal)
             .findFirst()
             .orElse(null);
-    }
-
-    private AddressResponse toAddressResponse(Address address) {
-        return new AddressResponse(
-            address.getZipCode(),
-            address.getStreet(),
-            address.getNumber(),
-            address.getComplement(),
-            address.getNeighborhood(),
-            address.getCity(),
-            address.getState()
-        );
     }
 }

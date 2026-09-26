@@ -9,6 +9,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.Lock;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.repository.query.Param;
 
 import br.com.sicape.api.domain.entity.Convicted;
@@ -17,6 +19,14 @@ import br.com.sicape.api.domain.enums.ConvictedStatus;
 import br.com.sicape.api.domain.valueobject.Cpf;
 
 public interface ConvictedRepository extends BaseRepository<Convicted> {
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select c from Convicted c where c.uuid = :uuid and c.district = :district and c.status = :status")
+    Optional<Convicted> findForAttendance(
+        @Param("uuid") UUID uuid,
+        @Param("district") JudicialDistrict district,
+        @Param("status") ConvictedStatus status
+    );
+
     boolean existsByCpf(Cpf cpf);
 
     boolean existsByCpfAndUuidNot(Cpf cpf, UUID uuid);
@@ -26,7 +36,7 @@ public interface ConvictedRepository extends BaseRepository<Convicted> {
         JudicialDistrict district
     );
 
-    @EntityGraph(attributePaths = {"processes", "processes.process"})
+    @EntityGraph(attributePaths = {"photo", "processes", "processes.process"})
     Optional<Convicted> findByUuidAndDistrictAndStatusNot(
         UUID uuid,
         JudicialDistrict district,
@@ -43,8 +53,8 @@ public interface ConvictedRepository extends BaseRepository<Convicted> {
               and (
                 :search = ''
                 or lower(convicted.name) like concat('%', :search, '%')
-                or (:digits is not null and convicted.cpf.value like concat('%', :digits, '%'))
-                or (:digits is not null and process.normalizedNumber like concat('%', :digits, '%'))
+                or (:digits <> '' and convicted.cpf.value like concat('%', :digits, '%'))
+                or (:digits <> '' and process.normalizedNumber like concat('%', :digits, '%'))
                 or lower(process.number) like concat('%', :search, '%')
               )
             """,
@@ -85,5 +95,23 @@ public interface ConvictedRepository extends BaseRepository<Convicted> {
         @Param("processUuids") Collection<UUID> processUuids,
         @Param("district") JudicialDistrict district,
         @Param("status") ConvictedStatus status
+    );
+
+    @Query("""
+      select new br.com.sicape.api.domain.repository.ProcessConvictedName(
+        process.uuid, convicted.name
+      )
+      from Convicted convicted
+      join convicted.processes link
+      join link.process process
+      where process.uuid in :processUuids
+        and convicted.district = :district
+        and convicted.status = :status
+      order by convicted.name asc
+      """)
+    List<ProcessConvictedName> findActiveNamesByProcesses(
+      @Param("processUuids") Collection<UUID> processUuids,
+      @Param("district") JudicialDistrict district,
+      @Param("status") ConvictedStatus status
     );
 }
