@@ -34,18 +34,17 @@ public class ReceiptPdfRendererImpl implements ReceiptPdfRenderer {
     private final String logoDataUri;
     private final String logoSha256;
 
+    /*
+     * Template e Logo são únicos e obtidos através de resources neste momento.
+     * Futuramente deve ser implementado uma entidade responsável por guardar as configurações da comarca.
+     * Presentemente eles são carregados neste construtor por praticidade.
+     */
     public ReceiptPdfRendererImpl() throws IOException {
         byte[] templateBytes;
         try (var stream = new ClassPathResource("receipt/receipt-template.xhtml").getInputStream()) {
             templateBytes = stream.readAllBytes();
         }
         this.template = new String(templateBytes, StandardCharsets.UTF_8);
-
-
-        /*
-         * Logo é obtido através de resources neste momento, até implementarmos uma entidade de configuração.
-         * Futuramente deve ser implementado uma entidade responsável por guardar as configurações da comarca.
-         */
         byte[] logo;
         try (var stream = new ClassPathResource("receipt/logo-template.png").getInputStream()) {
             logo = stream.readAllBytes();
