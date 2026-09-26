@@ -46,7 +46,7 @@ public interface GroupRepository extends BaseRepository<Group> {
 		""")
 	List<GroupParticipantCount> countParticipantsByGroupUuids(@Param("groupUuids") List<UUID> groupUuids);
 
-	@EntityGraph(attributePaths = {"presenters", "convicteds"})
+	@EntityGraph(attributePaths = "convicteds")
 	@Query("select g from Group g where g.uuid = :uuid and g.district = :district")
 	Optional<Group> findByUuidAndDistrict(
 		@Param("uuid") UUID uuid,

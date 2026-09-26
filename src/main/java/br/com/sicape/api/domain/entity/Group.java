@@ -7,6 +7,7 @@ import java.util.List;
 
 import br.com.sicape.api.domain.enums.GroupFrequency;
 import br.com.sicape.api.domain.enums.GroupStatus;
+import br.com.sicape.api.domain.exception.ConflictException;
 import jakarta.persistence.Column;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.ElementCollection;
@@ -82,4 +83,15 @@ public class Group extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     private JudicialDistrict district;
+
+    public void addConvicted(Convicted convicted) {
+        if (convicteds.contains(convicted)) {
+            throw new ConflictException("O apenado já está vinculado ao grupo reflexivo.");
+        }
+        convicteds.add(convicted);
+    }
+
+    public void removeConvicted(Convicted convicted) {
+        convicteds.remove(convicted);
+    }
 }
