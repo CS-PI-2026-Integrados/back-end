@@ -4,7 +4,6 @@ import java.time.Instant;
 import java.util.UUID;
 
 import br.com.sicape.api.domain.entity.Attendance;
-import br.com.sicape.api.domain.entity.MediaAsset;
 
 public record ReceiptSnapshot(
     UUID attendanceId,
@@ -19,15 +18,11 @@ public record ReceiptSnapshot(
     String courtName,
     String operatorName,
     String protocol,
-    UUID photoAssetId,
-    UUID convictedPhotoAssetId,
-    String templateVersion,
     String templateXhtml,
     String logoSha256
 ) {
     public static ReceiptSnapshot create(
         Attendance attendance,
-        MediaAsset convictedPhotoAsset,
         String templateXhtml,
         String logoSha256
     ) {
@@ -44,9 +39,6 @@ public record ReceiptSnapshot(
             "Vara de Execuções Penais", // Mantido hardcode até incluirmos uma entidade de configuração por comarca
             attendance.getUser().getName(),
             attendance.getUuid().toString(),
-            attendance.getPhoto().getUuid(),
-            convictedPhotoAsset.getUuid(),
-            "global-v1",
             templateXhtml,
             logoSha256
         );

@@ -2,7 +2,6 @@ package br.com.sicape.api.application.attendance.usecase;
 
 import java.util.UUID;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,7 +11,6 @@ import br.com.sicape.api.application.attendance.receipt.ReceiptSnapshot;
 import br.com.sicape.api.application.common.media.MediaAssetStore;
 import br.com.sicape.api.application.common.media.MediaContent;
 import br.com.sicape.api.application.oauth.AuthContext;
-import br.com.sicape.api.domain.entity.Attendance;
 import br.com.sicape.api.domain.entity.MediaAsset;
 import br.com.sicape.api.domain.enums.MediaAssetKind;
 import br.com.sicape.api.domain.exception.ConflictException;
@@ -47,6 +45,7 @@ public class GetAttendanceReceiptUseCase {
         if (convictedPhotoAsset == null) {
             throw new ConflictException("A foto de cadastro do apenado é obrigatória para emitir o comprovante.");
         }
+
         MediaContent attendancePhoto;
         try {
             attendancePhoto = media.read(attendance.getPhoto());
@@ -55,7 +54,6 @@ public class GetAttendanceReceiptUseCase {
                 uuid, attendance.getPhoto().getUuid(), failure);
             throw new IllegalStateException("A foto vinculada à presença está indisponível.", failure);
         }
-
         MediaContent convictedPhoto;
         try {
             convictedPhoto = media.read(convictedPhotoAsset);
@@ -65,18 +63,10 @@ public class GetAttendanceReceiptUseCase {
             throw new IllegalStateException("A foto de cadastro do apenado está indisponível.", failure);
         }
 
-        var snapshot = ReceiptSnapshot.create(attendance, convictedPhotoAsset,
-            renderer.template(), renderer.logoSha256());
-        String snapshotJson;
-        try {
-            snapshotJson = objectMapper.writeValueAsString(snapshot);
-        } catch (JsonProcessingException failure) {
-            log.error("Falha ao registrar snapshot do comprovante; attendanceUuid={}", uuid, failure);
-            throw new IllegalStateException("Não foi possível registrar o snapshot do comprovante.", failure);
-        }
+        var snapshot = ReceiptSnapshot.create(attendance, renderer.template(), renderer.logoSha256());
         byte[] pdf = renderer.render(snapshot, convictedPhoto, attendancePhoto);
         var receipt = media.save(pdf, "application/pdf", MediaAssetKind.RECEIPT);
-        attendance.completeReceipt(receipt, snapshotJson);
+        attendance.completeReceipt(receipt);
         attendances.saveAndFlush(attendance);
         return readPersisted(uuid, receipt);
     }

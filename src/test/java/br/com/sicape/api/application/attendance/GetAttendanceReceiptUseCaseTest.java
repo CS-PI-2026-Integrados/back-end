@@ -10,6 +10,7 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -72,7 +73,7 @@ class GetAttendanceReceiptUseCaseTest {
     }
 
     @Test
-    void generatesOncePersistsSnapshotAndReusesSavedFile() {
+    void generatesOncePersistsReceiptAndReusesSavedFile() {
         var receipt = new MediaAsset(UUID.randomUUID(), UUID.randomUUID().toString(),
             "application/pdf", pdf.length, MediaAssetKind.RECEIPT);
         when(media.save(pdf, "application/pdf", MediaAssetKind.RECEIPT)).thenReturn(receipt);
@@ -84,11 +85,16 @@ class GetAttendanceReceiptUseCaseTest {
         assertThat(first.bytes()).isEqualTo(pdf);
         assertThat(second.bytes()).isEqualTo(pdf);
         assertThat(attendance.getReceipt()).isSameAs(receipt);
-        assertThat(attendance.getSnapshotJson()).contains(
-            photo.getUuid().toString(), convictedPhoto.getUuid().toString(), "global-v1",
-            "Rua Central, 10 - Centro, Cidade/SP - CEP 12345678", "Trabalho formal",
-            "529.982.247-25", "(11) 98888-1001");
-        verify(renderer, times(1)).render(any(), any(), any());
+        var snapshotCaptor = ArgumentCaptor.forClass(ReceiptSnapshot.class);
+        verify(renderer, times(1)).render(snapshotCaptor.capture(), any(), any());
+        var snapshot = snapshotCaptor.getValue();
+        assertThat(snapshot.attendanceId()).isEqualTo(attendance.getUuid());
+        assertThat(snapshot.templateXhtml()).isEqualTo("<html>template</html>");
+        assertThat(snapshot.logoSha256()).isEqualTo("logo-hash");
+        assertThat(snapshot.address()).isEqualTo("Rua Central, 10 - Centro, Cidade/SP - CEP 12345678");
+        assertThat(snapshot.employmentStatus()).isEqualTo("Trabalho formal");
+        assertThat(snapshot.convictedCpf()).isEqualTo("529.982.247-25");
+        assertThat(snapshot.phone()).isEqualTo("(11) 98888-1001");
         verify(media, times(1)).save(pdf, "application/pdf", MediaAssetKind.RECEIPT);
         verify(attendances, times(1)).saveAndFlush(attendance);
         verify(attendances, times(2)).findForReceipt(attendance.getUuid(), auth.district());
@@ -149,7 +155,7 @@ class GetAttendanceReceiptUseCaseTest {
     void missingPersistedReceiptDoesNotRegenerate() {
         var receipt = new MediaAsset(UUID.randomUUID(), UUID.randomUUID().toString(),
             "application/pdf", pdf.length, MediaAssetKind.RECEIPT);
-        attendance.completeReceipt(receipt, "{\"issued\":true}");
+        attendance.completeReceipt(receipt);
         when(media.read(receipt)).thenThrow(new ResourceNotFoundException("Arquivo não encontrado."));
         assertThatThrownBy(() -> useCase.execute(attendance.getUuid(), auth))
             .isInstanceOf(IllegalStateException.class)

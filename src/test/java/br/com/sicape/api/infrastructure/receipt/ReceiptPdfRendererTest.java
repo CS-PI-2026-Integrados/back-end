@@ -31,8 +31,7 @@ class ReceiptPdfRendererTest {
         var snapshot = new ReceiptSnapshot(UUID.randomUUID(), Instant.parse("2026-09-25T22:42:00Z"),
             "Rua Central, 10 - Centro, Cidade/SP - CEP 12345678", "(11) 98888-1001", "Trabalho formal",
             "Arthur Morgan", "529.982.247-25", "0001234-56.2026.8.26.0001", "Comarca Central",
-            "Vara Única de Teste", "Operador", "PROTOCOLO-123", UUID.randomUUID(), UUID.randomUUID(),
-            "global-v1", renderer.template(), renderer.logoSha256());
+            "Vara Única de Teste", "Operador", "PROTOCOLO-123", renderer.template(), renderer.logoSha256());
 
         byte[] pdf = renderer.render(snapshot,
             new MediaContent(convictedImageBytes.toByteArray(), "image/png"),

@@ -8,6 +8,7 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -52,7 +53,7 @@ class AttendanceReceiptPersistenceTest {
 
     @Test
     @Transactional
-    void persistsSnapshotAndServesOnlySameDistrictWithoutRegeneration() {
+    void persistsReceiptAndServesOnlySameDistrictWithoutRegeneration() {
         var district = new JudicialDistrict();
         district.setName("Comarca Central");
         district = districts.saveAndFlush(district);
@@ -93,13 +94,14 @@ class AttendanceReceiptPersistenceTest {
         entityManager.clear();
         var persisted = attendances.findByUuidAndDistrict(id, district).orElseThrow();
         assertThat(persisted.getReceipt().getUuid()).isEqualTo(receipt.getUuid());
-        assertThat(persisted.getSnapshotJson()).hasSizeGreaterThan(2048)
-            .contains(photo.getUuid().toString(), convictedPhoto.getUuid().toString(), "global-v1");
         assertThat(useCase.execute(id, new AuthContext(user, district, null)).bytes()).isEqualTo(pdf);
         var forbiddenDistrict = otherDistrict;
         assertThatThrownBy(() -> useCase.execute(id, new AuthContext(user, forbiddenDistrict, null)))
             .isInstanceOf(ResourceNotFoundException.class);
-        verify(renderer, times(1)).render(any(), any(), any());
+        var snapshotCaptor = ArgumentCaptor.forClass(ReceiptSnapshot.class);
+        verify(renderer, times(1)).render(snapshotCaptor.capture(), any(), any());
+        assertThat(snapshotCaptor.getValue().templateXhtml()).hasSizeGreaterThan(2048);
+        assertThat(snapshotCaptor.getValue().logoSha256()).isEqualTo("logo-hash");
         verify(media, times(1)).save(pdf, "application/pdf", MediaAssetKind.RECEIPT);
     }
 }
