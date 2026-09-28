@@ -25,8 +25,15 @@ public class MediaAssetStore {
     @Transactional(propagation = Propagation.MANDATORY)
     public MediaAsset save(byte[] content, String contentType, MediaAssetKind kind) {
         requireTransactionSynchronization();
+        if (kind == null) {
+            throw new IllegalArgumentException("A finalidade da mídia é obrigatória");
+        }
         UUID uuid = UUID.randomUUID();
-        String key = uuid.toString();
+        String directory = switch (kind) {
+            case PHOTO -> "photo";
+            case RECEIPT -> "receipt";
+        };
+        String key = directory + "/" + uuid;
 
         storage.save(key, content, contentType);
         try {

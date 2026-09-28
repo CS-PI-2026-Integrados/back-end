@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <style type="text/css">
+    @page { size: A4; margin: 46pt 50pt 42pt; }
+    body { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; color: #161616; }
+    .header { width: 100%; border-collapse: collapse; margin-bottom: 38pt; }
+    .header td { vertical-align: middle; }
+    .logo { width: 145pt; }
+    .title { text-align: right; font-weight: bold; font-size: 11pt; }
+    .subtitle { text-align: right; font-weight: bold; font-size: 9pt; }
+    .details { line-height: 1.65; }
+    .section-title { margin-top: 36pt; text-align: center; font-weight: bold; font-size: 11pt; }
+    .info { width: 100%; border-collapse: collapse; margin-top: 10pt; }
+    .info td { border-top: 1px solid #d4ddea; padding: 8pt 9pt; vertical-align: top; }
+    .info tr:last-child td { border-bottom: 1px solid #d4ddea; }
+    .info .label { width: 25%; font-weight: bold; }
+    .info .confirmed { width: 19%; color: #555; }
+    .declaration { margin-top: 30pt; text-align: center; line-height: 1.6; }
+    .photos { width: 100%; border-collapse: collapse; margin-top: 26pt; }
+    .photos td { width: 50%; height: 166pt; text-align: center; vertical-align: middle; }
+    .photo { width: 130pt; max-height: 160pt; }
+    .captions { width: 100%; border-collapse: collapse; }
+    .captions td { width: 50%; text-align: center; font-size: 9pt; }
+    .footer { margin-top: 38pt; text-align: center; color: #888; font-size: 7pt; font-style: italic; }
+  </style>
+</head>
+<body>
+  <table class="header"><tr>
+    <td><img class="logo" src="{{logoDataUri}}" alt="Logo" /></td>
+    <td><div class="title">COMPROVANTE DE COMPARECIMENTO</div>
+      <div class="subtitle">{{districtName}} - {{courtName}}</div></td>
+  </tr></table>
+
+  <div class="details">
+    <div><b>Processo:</b> {{processNumber}}</div>
+    <div><b>Nome:</b> {{convictedName}}</div>
+    <div><b>CPF:</b> {{convictedCpf}}</div>
+    <div><b>Fórum:</b> {{districtName}}</div>
+    <div><b>Vara:</b> {{courtName}}</div>
+    <div><b>Operador:</b> {{operatorName}}</div>
+    <div><b>Protocolo de Validação:</b> {{protocol}}</div>
+  </div>
+
+  <div class="section-title">Controle de Informações</div>
+  <table class="info">
+    <tr><td class="label">Telefone</td><td class="confirmed">Confirmado</td><td>{{phone}}</td></tr>
+    <tr><td class="label">Endereço</td><td class="confirmed">Confirmado</td><td>{{address}}</td></tr>
+    <tr><td class="label">Situação Trabalhista</td><td class="confirmed">Confirmado</td><td>{{employmentStatus}}</td></tr>
+  </table>
+
+  <div class="declaration">Este é o comprovante oficial de validação de presença do réu.<br />
+    <b>Compareceu presencialmente nesta comarca em {{attendedAt}}.</b>
+  </div>
+
+  <table class="photos"><tr>
+    <td><img class="photo" src="{{convictedPhotoDataUri}}" alt="Foto do cadastro" /></td>
+    <td><img class="photo" src="{{attendancePhotoDataUri}}" alt="Registro da presença" /></td>
+  </tr></table>
+  <table class="captions"><tr><td>Foto do Cadastro</td><td>Registro da Presença</td></tr></table>
+
+  <div class="footer">Este documento foi gerado automaticamente pelo sistema SICAPE na presença do apenado.</div>
+</body>
+</html>

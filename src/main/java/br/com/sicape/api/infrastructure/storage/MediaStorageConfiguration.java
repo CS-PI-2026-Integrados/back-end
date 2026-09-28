@@ -12,7 +12,7 @@ public class MediaStorageConfiguration {
     private final Path path;
 
     public MediaStorageConfiguration(
-        @Value("${media.storage.path:./storage/media}") String path,
+        @Value("${media.storage.path:./storage}") String path,
         @Value("${media.storage.provider:local}") String provider
     ) {
         this.path = Path.of(path).toAbsolutePath().normalize();
@@ -23,7 +23,7 @@ public class MediaStorageConfiguration {
 
     @Bean
     @ConditionalOnProperty(name = "media.storage.provider", havingValue = "local", matchIfMissing = true)
-    public LocalFileStorage fileStorage() {
-        return new LocalFileStorage(path);
+    public LocalFileStorageImpl fileStorage() {
+        return new LocalFileStorageImpl(path);
     }
 }
