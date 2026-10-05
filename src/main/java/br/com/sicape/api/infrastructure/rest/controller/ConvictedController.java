@@ -99,13 +99,14 @@ public class ConvictedController {
     }
 
     @PutMapping(value = "/{uuid}/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ConvictedResponse updatePhoto(
+    public ResponseEntity<Void> updatePhoto(
         @PathVariable UUID uuid,
         @RequestPart("photo") MultipartFile photo,
         @AuthenticationPrincipal AuthContext authContext
     ) {
         try {
-            return updatePhotoUseCase.execute(uuid, photo.getBytes(), photo.getContentType(), authContext);
+            updatePhotoUseCase.execute(uuid, photo.getBytes(), photo.getContentType(), authContext);
+            return ResponseEntity.noContent().build();
         } catch (IOException exception) {
             throw new ValidationException("photo", "Não foi possível ler a foto enviada");
         }
