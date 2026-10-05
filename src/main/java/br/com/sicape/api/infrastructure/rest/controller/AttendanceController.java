@@ -9,7 +9,6 @@ import org.springframework.http.ContentDisposition;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import br.com.sicape.api.application.attendance.dto.AttendanceResponse;
@@ -27,7 +26,6 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 
-@Validated
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/attendance")
@@ -43,9 +41,9 @@ public class AttendanceController {
         @RequestParam(required = false) String search,
         @RequestParam(defaultValue = "0") @Min(0) int page,
         @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
-        @AuthenticationPrincipal AuthContext auth
+        @AuthenticationPrincipal AuthContext authContext
     ) {
-        return listUseCase.execute(search, page, size, auth);
+        return listUseCase.execute(search, page, size, authContext);
     }
 
     @GetMapping("/{uuid}")

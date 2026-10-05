@@ -25,7 +25,6 @@ import br.com.sicape.api.domain.enums.ProcessStatus;
 import br.com.sicape.api.domain.exception.ValidationException;
 import br.com.sicape.api.domain.repository.ConvictedRepository;
 import br.com.sicape.api.domain.repository.JudicialProcessRepository;
-import br.com.sicape.api.domain.valueobject.Address;
 
 class CreateConvictedUseCaseTest {
     private final ConvictedRepository repository = mock(ConvictedRepository.class);

@@ -175,13 +175,7 @@
       "key": "page_size",
       "value": "20",
       "type": "string",
-      "description": "Tamanho de página de apenados, processos e presenças: 1 a 100."
-    },
-    {
-      "key": "user_page_size",
-      "value": "10",
-      "type": "string",
-      "description": "Tamanho padrão de página de usuários."
+      "description": "Tamanho de página de todas as listagens: 1 a 100; padrão 20."
     }
   ],
   "item": [
@@ -457,7 +451,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/users?page={{page}}&size={{user_page_size}}",
+              "raw": "{{base_url}}/users?page={{page}}&size={{page_size}}",
               "host": [
                 "{{base_url}}"
               ],
@@ -472,8 +466,8 @@
                 },
                 {
                   "key": "size",
-                  "value": "{{user_page_size}}",
-                  "description": "Quantidade por página. Apenados, processos e presenças: 1 a 100."
+                  "value": "{{page_size}}",
+                  "description": "Quantidade por página. Todas as listagens: 1 a 100; padrão 20."
                 },
                 {
                   "key": "search",
@@ -483,7 +477,7 @@
                 }
               ]
             },
-            "description": "Requer ADMIN. search opcional. Paginação padrão da API: page=0, size=10."
+            "description": "Requer ADMIN. search opcional. Paginação padrão da API: page=0, size=20; size de 1 a 100. Parâmetros inválidos retornam 422."
           },
           "event": [
             {
@@ -702,7 +696,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/usuarios?page={{page}}&size={{user_page_size}}",
+              "raw": "{{base_url}}/usuarios?page={{page}}&size={{page_size}}",
               "host": [
                 "{{base_url}}"
               ],
@@ -717,8 +711,8 @@
                 },
                 {
                   "key": "size",
-                  "value": "{{user_page_size}}",
-                  "description": "Quantidade por página. Apenados, processos e presenças: 1 a 100."
+                  "value": "{{page_size}}",
+                  "description": "Quantidade por página. Todas as listagens: 1 a 100; padrão 20."
                 },
                 {
                   "key": "search",
@@ -728,7 +722,7 @@
                 }
               ]
             },
-            "description": "Requer ADMIN. search opcional. Paginação padrão da API: page=0, size=10."
+            "description": "Requer ADMIN. search opcional. Paginação padrão da API: page=0, size=20; size de 1 a 100. Parâmetros inválidos retornam 422."
           },
           "event": [
             {
@@ -909,7 +903,7 @@
                 {
                   "key": "size",
                   "value": "{{page_size}}",
-                  "description": "Quantidade por página. Apenados, processos e presenças: 1 a 100."
+                  "description": "Quantidade por página. Todas as listagens: 1 a 100; padrão 20."
                 },
                 {
                   "key": "search",
@@ -968,7 +962,7 @@
                 {
                   "key": "size",
                   "value": "{{page_size}}",
-                  "description": "Quantidade por página. Apenados, processos e presenças: 1 a 100."
+                  "description": "Quantidade por página. Todas as listagens: 1 a 100; padrão 20."
                 },
                 {
                   "key": "search",
@@ -1026,7 +1020,7 @@
                 {
                   "key": "size",
                   "value": "{{page_size}}",
-                  "description": "Quantidade por página. Apenados, processos e presenças: 1 a 100."
+                  "description": "Quantidade por página. Todas as listagens: 1 a 100; padrão 20."
                 }
               ]
             },
@@ -1078,7 +1072,7 @@
                 {
                   "key": "size",
                   "value": "{{page_size}}",
-                  "description": "Quantidade por página. Apenados, processos e presenças: 1 a 100."
+                  "description": "Quantidade por página. Todas as listagens: 1 a 100; padrão 20."
                 }
               ]
             },
@@ -1130,7 +1124,7 @@
                 {
                   "key": "size",
                   "value": "{{page_size}}",
-                  "description": "Quantidade por página. Apenados, processos e presenças: 1 a 100."
+                  "description": "Quantidade por página. Todas as listagens: 1 a 100; padrão 20."
                 }
               ]
             },
@@ -1624,7 +1618,7 @@
                 {
                   "key": "size",
                   "value": "{{page_size}}",
-                  "description": "Quantidade por página. Apenados, processos e presenças: 1 a 100."
+                  "description": "Quantidade por página. Todas as listagens: 1 a 100; padrão 20."
                 },
                 {
                   "key": "search",

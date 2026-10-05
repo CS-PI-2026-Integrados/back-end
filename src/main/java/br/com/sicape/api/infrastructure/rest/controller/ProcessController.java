@@ -1,7 +1,6 @@
 package br.com.sicape.api.infrastructure.rest.controller;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -15,7 +14,6 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 
-@Validated
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/processes")

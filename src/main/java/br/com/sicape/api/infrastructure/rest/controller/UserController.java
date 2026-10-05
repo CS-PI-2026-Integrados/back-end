@@ -5,7 +5,6 @@ import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,18 +24,19 @@ import br.com.sicape.api.application.user.usecase.GetUserUseCase;
 import br.com.sicape.api.application.user.usecase.ListUsersUseCase;
 import br.com.sicape.api.application.user.usecase.UpdateUserUseCase;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 
 import br.com.sicape.api.application.user.usecase.DeleteUserUseCase;
 import org.springframework.web.bind.annotation.DeleteMapping;
 
-@Validated
 @RestController
 @RequiredArgsConstructor
 @RequestMapping({"/usuarios", "/users"})
 public class UserController {
     private final CreateUserUseCase createUserUseCase;
-    private final ListUsersUseCase listUsersUseCase;
+    private final ListUsersUseCase listUseCase;
     private final GetUserUseCase getUserUseCase;
     private final UpdateUserUseCase updateUserUseCase;
     private final DeleteUserUseCase deleteUserUseCase;
@@ -51,13 +51,13 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<PageResponse<UserResponse>> list(
+    public PageResponse<UserResponse> list(
         @RequestParam(required = false) String search,
-        @RequestParam(defaultValue = "0") int page,
-        @RequestParam(defaultValue = "10") int size,
+        @RequestParam(defaultValue = "0") @Min(0) int page,
+        @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
         @AuthenticationPrincipal AuthContext authContext
     ) {
-        return ResponseEntity.ok(listUsersUseCase.execute(search, page, size, authContext));
+        return listUseCase.execute(search, page, size, authContext);
     }
 
     @GetMapping("/{id}")
