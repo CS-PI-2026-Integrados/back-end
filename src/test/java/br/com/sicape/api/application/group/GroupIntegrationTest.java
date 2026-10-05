@@ -37,6 +37,7 @@ import br.com.sicape.api.domain.repository.ConvictedRepository;
 import br.com.sicape.api.domain.repository.JudicialDistrictRepository;
 import br.com.sicape.api.domain.valueobject.Address;
 import br.com.sicape.api.domain.valueobject.Cpf;
+import br.com.sicape.api.domain.valueobject.Phone;
 import br.com.sicape.api.infrastructure.persistence.seeder.GroupSeeder;
 import br.com.sicape.api.infrastructure.persistence.util.DevelopmentData;
 
@@ -150,7 +151,7 @@ class GroupIntegrationTest {
             "Apenado de teste",
             Cpf.of("51914372093"),
             LocalDate.of(1990, 1, 1),
-            "11999999999",
+            Phone.of("11999999999"),
             new Address("01001000", "Praca da Se", "1", null, "Se", "Sao Paulo", "SP"),
             null,
             district
