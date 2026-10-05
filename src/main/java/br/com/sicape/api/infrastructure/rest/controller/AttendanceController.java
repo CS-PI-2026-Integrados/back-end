@@ -17,9 +17,14 @@ import br.com.sicape.api.application.attendance.dto.CreateAttendanceRequest;
 import br.com.sicape.api.application.attendance.usecase.CreateAttendanceUseCase;
 import br.com.sicape.api.application.attendance.usecase.GetAttendancePhotoUseCase;
 import br.com.sicape.api.application.attendance.usecase.GetAttendanceReceiptUseCase;
+import br.com.sicape.api.application.attendance.usecase.GetAttendanceUseCase;
+import br.com.sicape.api.application.attendance.usecase.ListAttendanceUseCase;
+import br.com.sicape.api.application.common.dto.response.PageResponse;
 import br.com.sicape.api.application.oauth.AuthContext;
 import br.com.sicape.api.domain.exception.ValidationException;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 
 @Validated
@@ -30,6 +35,26 @@ public class AttendanceController {
     private final CreateAttendanceUseCase createUseCase;
     private final GetAttendancePhotoUseCase getPhoto;
     private final GetAttendanceReceiptUseCase getReceipt;
+    private final ListAttendanceUseCase listUseCase;
+    private final GetAttendanceUseCase getUseCase;
+
+    @GetMapping
+    public PageResponse<AttendanceResponse> list(
+        @RequestParam(required = false) String search,
+        @RequestParam(defaultValue = "0") @Min(0) int page,
+        @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
+        @AuthenticationPrincipal AuthContext auth
+    ) {
+        return listUseCase.execute(search, page, size, auth);
+    }
+
+    @GetMapping("/{uuid}")
+    public AttendanceResponse get(
+        @PathVariable UUID uuid,
+        @AuthenticationPrincipal AuthContext auth
+    ) {
+        return getUseCase.execute(uuid, auth);
+    }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<AttendanceResponse> create(

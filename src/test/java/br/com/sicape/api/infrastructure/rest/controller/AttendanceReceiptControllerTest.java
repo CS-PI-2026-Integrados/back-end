@@ -14,7 +14,7 @@ import br.com.sicape.api.domain.exception.ValidationException;
 
 class AttendanceReceiptControllerTest {
     private final GetAttendanceReceiptUseCase useCase = mock(GetAttendanceReceiptUseCase.class);
-    private final AttendanceController controller = new AttendanceController(null, null, useCase);
+    private final AttendanceController controller = new AttendanceController(null, null, useCase, null, null);
     private final UUID id = UUID.randomUUID();
     private final AuthContext auth = mock(AuthContext.class);
 

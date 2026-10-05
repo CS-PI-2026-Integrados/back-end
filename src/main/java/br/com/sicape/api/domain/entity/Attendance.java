@@ -16,7 +16,8 @@ import lombok.NoArgsConstructor;
     @Index(name = "idx_attendance_district", columnList = "district_id"),
     @Index(name = "idx_attendance_convicted", columnList = "convicted_id"),
     @Index(name = "idx_attendance_process", columnList = "process_id"),
-    @Index(name = "idx_attendance_created_at", columnList = "created_at")
+    @Index(name = "idx_attendance_created_at", columnList = "created_at"),
+    @Index(name = "idx_attendance_district_created_at", columnList = "district_id, created_at")
 })
 public class Attendance extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
