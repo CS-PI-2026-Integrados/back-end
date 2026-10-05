@@ -64,12 +64,12 @@ public class ConvictedController {
 
     @GetMapping
     public PageResponse<ConvictedListItemResponse> list(
-        @RequestParam(name = "search", required = false) String query,
+        @RequestParam(required = false) String search,
         @RequestParam(defaultValue = "0") @Min(0) int page,
         @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
         @AuthenticationPrincipal AuthContext authContext
     ) {
-        return listUseCase.execute(query, page, size, authContext);
+        return listUseCase.execute(search, page, size, authContext);
     }
 
     @GetMapping("/{uuid}")

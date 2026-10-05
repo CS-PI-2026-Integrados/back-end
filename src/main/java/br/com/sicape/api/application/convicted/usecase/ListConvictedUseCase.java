@@ -29,12 +29,12 @@ public class ListConvictedUseCase {
 
     @Transactional(readOnly = true)
     public PageResponse<ConvictedListItemResponse> execute(
-        String query,
+        String search,
         int page,
         int size,
         AuthContext authContext
     ) {
-        String search = query == null ? "" : query.trim().toLowerCase();
+        search = search == null ? "" : search.trim().toLowerCase();
         String normalizedDigits = search.replaceAll("\\D", "");
         String digits = normalizedDigits.isBlank() ? null : normalizedDigits;
 

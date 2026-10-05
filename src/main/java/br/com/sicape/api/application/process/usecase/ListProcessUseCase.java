@@ -28,12 +28,12 @@ public class ListProcessUseCase {
 
     @Transactional(readOnly = true)
     public PageResponse<ProcessListItemResponse> execute(
-        String query,
+        String search,
         int page,
         int size,
         AuthContext authContext
     ) {
-        String search = query == null ? "" : query.trim();
+        search = search == null ? "" : search.trim();
         String digits = search.replaceAll("\\D", "");
 
         var result = repository.search(
