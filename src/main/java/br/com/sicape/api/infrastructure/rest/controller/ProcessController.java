@@ -1,7 +1,6 @@
 package br.com.sicape.api.infrastructure.rest.controller;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -15,7 +14,6 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 
-@Validated
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/processes")
@@ -24,11 +22,11 @@ public class ProcessController {
 
     @GetMapping
     public PageResponse<ProcessListItemResponse> list(
-        @RequestParam(name = "search", required = false) String query,
+        @RequestParam(required = false) String search,
         @RequestParam(defaultValue = "0") @Min(0) int page,
         @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
         @AuthenticationPrincipal AuthContext authContext
     ) {
-        return listUseCase.execute(query, page, size, authContext);
+        return listUseCase.execute(search, page, size, authContext);
     }
 }
