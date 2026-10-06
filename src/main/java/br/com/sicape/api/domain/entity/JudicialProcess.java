@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.Index;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
@@ -16,7 +17,9 @@ import br.com.sicape.api.domain.enums.ProcessStatus;
 
 @Entity
 @Getter
-@Table(name = "judicial_process")
+@Table(name = "judicial_process", indexes = {
+    @Index(name = "idx_process_normalized_number", columnList = "normalized_number")
+})
 @BatchSize(size = 50)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class JudicialProcess extends BaseEntity {
@@ -38,8 +41,12 @@ public class JudicialProcess extends BaseEntity {
             throw new IllegalArgumentException("O número do processo é obrigatório");
         }
         this.number = number.trim();
-        this.normalizedNumber = number.replaceAll("\\D", "");
+        this.normalizedNumber = normalizeNumber(number);
         this.status = status;
         this.district = district;
+    }
+
+    public static String normalizeNumber(String number) {
+        return number.replaceAll("\\D", "");
     }
 }
