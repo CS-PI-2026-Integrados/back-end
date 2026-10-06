@@ -3,11 +3,22 @@ package br.com.sicape.api.domain.valueobject;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 class PhoneTest {
+    @Test
+    void formatsMobilePhone() {
+        assertThat(Phone.of("11912345678").formatted()).isEqualTo("(11) 91234-5678");
+    }
+
+    @Test
+    void formatsLandlinePhone() {
+        assertThat(Phone.of("(11) 3234-5678").formatted()).isEqualTo("(11) 3234-5678");
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"11912345678", "(11) 91234-5678", "11 91234-5678"})
     void normalizesMobilePhoneWithAreaCode(String value) {

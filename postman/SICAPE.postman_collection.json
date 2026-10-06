@@ -1,0 +1,1910 @@
+{
+  "info": {
+    "name": "SICAPE - API completa",
+    "description": "Template baseado nos controllers, DTOs e validações do checkout atual do SICAPE. Postman Collection v2.1. Contém todas as 26 combinações de método/caminho (incluindo /users e /usuarios), com 33 requisições e variantes.\n\nImporte a coleção e, opcionalmente, o ambiente Development. Execute Login — Administrador antes das rotas protegidas. Credenciais e UUIDs iniciais correspondem aos seeders do perfil development. Em outro ambiente, ajuste as variáveis. Login e refresh capturam tokens; cadastros capturam IDs.\n\nAs duas pastas de usuários são aliases: escolha um caminho para cada operação. Este catálogo contém operações e exemplos alternativos; execute as requisições desejadas individualmente. Cadastros repetidos podem retornar 409, e exclusões desativam registros. Selecione arquivos nos campos photo antes dos uploads.\n\nJSON usa snake_case; filtros de presença na URL usam camelCase. /status também requer Bearer. As pastas de usuários usam admin_access_token; as demais herdam access_token. Mantenha tokens e IDs capturados nas variáveis da coleção para evitar sobreposição pelo ambiente. Os scripts validam status HTTP e MIME de arquivos. Respostas reais devem ser verificadas com a API em execução.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080/api",
+      "type": "string",
+      "description": "URL com contexto /api e sem barra final."
+    },
+    {
+      "key": "admin_cpf",
+      "value": "51914372093",
+      "type": "string",
+      "description": "Administrador criado pelo seeder development."
+    },
+    {
+      "key": "operator_cpf",
+      "value": "64282587067",
+      "type": "string",
+      "description": "Operador criado pelo seeder development."
+    },
+    {
+      "key": "password",
+      "value": "123456789",
+      "type": "string",
+      "description": "Senha do seeder development; ajuste para outros ambientes."
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string",
+      "description": "Token da última sessão autenticada, preenchido automaticamente."
+    },
+    {
+      "key": "admin_access_token",
+      "value": "",
+      "type": "string",
+      "description": "Token do login administrador, usado nas pastas de usuários."
+    },
+    {
+      "key": "operator_access_token",
+      "value": "",
+      "type": "string",
+      "description": "Token do login operador."
+    },
+    {
+      "key": "refresh_token",
+      "value": "",
+      "type": "string",
+      "description": "Refresh token da última sessão autenticada."
+    },
+    {
+      "key": "active_role",
+      "value": "",
+      "type": "string",
+      "description": "Perfil da sessão atual: admin ou operator; capturado no login."
+    },
+    {
+      "key": "expires_in",
+      "value": "",
+      "type": "string",
+      "description": "Validade em segundos do access token; capturada na resposta."
+    },
+    {
+      "key": "user_uuid",
+      "value": "",
+      "type": "string",
+      "description": "UUID retornado ao criar usuário; ou informe um UUID existente."
+    },
+    {
+      "key": "new_user_cpf",
+      "value": "39053344705",
+      "type": "string",
+      "description": "CPF fictício válido para cadastro; precisa estar disponível."
+    },
+    {
+      "key": "new_user_email",
+      "value": "postman.usuario@example.com",
+      "type": "string",
+      "description": "E-mail de exemplo único para cadastro."
+    },
+    {
+      "key": "new_user_password",
+      "value": "Postman123!",
+      "type": "string",
+      "description": "Senha de exemplo para criação de usuário."
+    },
+    {
+      "key": "user_search",
+      "value": "Postman",
+      "type": "string",
+      "description": "Busca opcional de usuários."
+    },
+    {
+      "key": "convicted_uuid",
+      "value": "00000000-0000-0000-0000-00000000012d",
+      "type": "string",
+      "description": "Sarah Connor do seeder; substituído ao criar/consultar apenado."
+    },
+    {
+      "key": "convicted_cpf",
+      "value": "11144477735",
+      "type": "string",
+      "description": "CPF do apenado selecionado; atualizado ao criar/consultar/atualizar."
+    },
+    {
+      "key": "new_convicted_cpf",
+      "value": "16899535009",
+      "type": "string",
+      "description": "CPF fictício válido para cadastro; precisa estar disponível."
+    },
+    {
+      "key": "convicted_search",
+      "value": "Sarah",
+      "type": "string",
+      "description": "Nome para busca opcional."
+    },
+    {
+      "key": "active_process_uuid",
+      "value": "00000000-0000-0000-0000-0000000000c8",
+      "type": "string",
+      "description": "Processo ativo 200 do seeder, vinculado a Sarah."
+    },
+    {
+      "key": "active_process_number",
+      "value": "0001234-56.2026.8.26.0001",
+      "type": "string",
+      "description": "Número do processo ativo selecionado."
+    },
+    {
+      "key": "attendance_uuid",
+      "value": "",
+      "type": "string",
+      "description": "UUID retornado ao registrar presença; ou informe uma presença existente."
+    },
+    {
+      "key": "attendance_search",
+      "value": "Sarah",
+      "type": "string",
+      "description": "Busca opcional de presenças por nome do apenado, CPF ou número do processo."
+    },
+    {
+      "key": "removable_convicted_uuid",
+      "value": "",
+      "type": "string",
+      "description": "UUID de apenado sem processo ativo, a ser desativado."
+    },
+    {
+      "key": "photo_content_type",
+      "value": "image/jpeg",
+      "type": "string",
+      "description": "image/jpeg para JPG ou image/png para PNG; deve corresponder ao arquivo."
+    },
+    {
+      "key": "page",
+      "value": "0",
+      "type": "string",
+      "description": "Primeira página é 0."
+    },
+    {
+      "key": "page_size",
+      "value": "20",
+      "type": "string",
+      "description": "Tamanho de página de todas as listagens: 1 a 100; padrão 20."
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Autenticação",
+      "description": "Login Basic e renovação sem Bearer.",
+      "item": [
+        {
+          "name": "Login — Administrador",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/authentication/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "authentication",
+                "login"
+              ]
+            },
+            "description": "Autenticação Basic: CPF e senha. Salva access_token, refresh_token, expires_in e o token específico do perfil. Este login passa a ser a sessão usada nas rotas gerais. Credenciais padrão são dos seeders de development.",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{admin_cpf}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP esperado: 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "    const data = pm.response.json();",
+                  "    pm.test('Tokens retornados', function () {",
+                  "        pm.expect(data.access_token).to.be.a('string').and.not.empty;",
+                  "        pm.expect(data.refresh_token).to.be.a('string').and.not.empty;",
+                  "    });",
+                  "    if (data.access_token) {",
+                  "        pm.collectionVariables.set('access_token', data.access_token);",
+                  "        pm.collectionVariables.set('admin_access_token', data.access_token);",
+                  "        pm.collectionVariables.set('active_role', 'admin');",
+                  "    }",
+                  "    if (data.refresh_token) pm.collectionVariables.set('refresh_token', data.refresh_token);",
+                  "    if (data.expires_in !== undefined) pm.collectionVariables.set('expires_in', String(data.expires_in));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Login — Operador",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/authentication/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "authentication",
+                "login"
+              ]
+            },
+            "description": "Autenticação Basic: CPF e senha. Salva access_token, refresh_token, expires_in e o token específico do perfil. Este login passa a ser a sessão usada nas rotas gerais. Credenciais padrão são dos seeders de development.",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{operator_cpf}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP esperado: 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "    const data = pm.response.json();",
+                  "    pm.test('Tokens retornados', function () {",
+                  "        pm.expect(data.access_token).to.be.a('string').and.not.empty;",
+                  "        pm.expect(data.refresh_token).to.be.a('string').and.not.empty;",
+                  "    });",
+                  "    if (data.access_token) {",
+                  "        pm.collectionVariables.set('access_token', data.access_token);",
+                  "        pm.collectionVariables.set('operator_access_token', data.access_token);",
+                  "        pm.collectionVariables.set('active_role', 'operator');",
+                  "    }",
+                  "    if (data.refresh_token) pm.collectionVariables.set('refresh_token', data.refresh_token);",
+                  "    if (data.expires_in !== undefined) pm.collectionVariables.set('expires_in', String(data.expires_in));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Renovar token da sessão atual",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/authentication/refresh",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "authentication",
+                "refresh"
+              ]
+            },
+            "description": "Envia refresh_token como application/x-www-form-urlencoded, sem Bearer. Atualiza access_token e o token do perfil em active_role. A resposta atual não devolve refresh_token; o valor anterior é preservado.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "refresh_token",
+                  "value": "{{refresh_token}}",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP esperado: 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "    const data = pm.response.json();",
+                  "    pm.test('Access token retornado', function () {",
+                  "        pm.expect(data.access_token).to.be.a('string').and.not.empty;",
+                  "    });",
+                  "    if (data.access_token) {",
+                  "        pm.collectionVariables.set('access_token', data.access_token);",
+                  "        const role = pm.collectionVariables.get('active_role');",
+                  "        if (role === 'admin' || role === 'operator') pm.collectionVariables.set(role + '_access_token', data.access_token);",
+                  "    }",
+                  "    if (data.expires_in !== undefined) pm.collectionVariables.set('expires_in', String(data.expires_in));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. Usuários — /users",
+      "description": "Todas as operações requerem ADMIN. Faça Login — Administrador.",
+      "item": [
+        {
+          "name": "Criar usuário",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "users"
+              ]
+            },
+            "description": "Requer ADMIN. CPF e e-mail únicos. Senha com pelo menos 8 caracteres, letras e números. role: admin ou operator. Salva user_uuid. Usuário criado na comarca do administrador.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Usuário Postman\",\n  \"cpf\": \"{{new_user_cpf}}\",\n  \"email\": \"{{new_user_email}}\",\n  \"password\": \"{{new_user_password}}\",\n  \"role\": \"operator\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP esperado: 201', function () { pm.response.to.have.status(201); });",
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "    const data = pm.response.json();",
+                  "    if (data.id) pm.collectionVariables.set('user_uuid', data.id);",
+                  "    ",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Listar e buscar usuários",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users?page={{page}}&size={{page_size}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "{{page}}",
+                  "description": "Página inicial 0; valor não negativo."
+                },
+                {
+                  "key": "size",
+                  "value": "{{page_size}}",
+                  "description": "Quantidade por página. Todas as listagens: 1 a 100; padrão 20."
+                },
+                {
+                  "key": "search",
+                  "value": "{{user_search}}",
+                  "description": "Termo de busca.",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Requer ADMIN. search opcional. Paginação padrão da API: page=0, size=20; size de 1 a 100. Parâmetros inválidos retornam 422."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP esperado: 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Consultar usuário",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users/{{user_uuid}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "users",
+                "{{user_uuid}}"
+              ]
+            },
+            "description": "Requer ADMIN. Informe user_uuid ou execute Criar usuário."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP esperado: 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Atualizar usuário",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users/{{user_uuid}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "users",
+                "{{user_uuid}}"
+              ]
+            },
+            "description": "Requer ADMIN. name, email e role obrigatórios; password pode ser omitida para manter a senha. CPF não é alterado por esta rota. Não é permitido alterar o próprio perfil.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Usuário Postman atualizado\",\n  \"email\": \"{{new_user_email}}\",\n  \"role\": \"operator\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP esperado: 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Desativar usuário",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users/{{user_uuid}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "users",
+                "{{user_uuid}}"
+              ]
+            },
+            "description": "Requer ADMIN. Desativação lógica. Não permite remover o próprio usuário. Use o UUID de um usuário que deseja desativar; resposta 204 sem corpo."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP esperado: 204', function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{admin_access_token}}",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "3. Usuários — /usuarios (alias)",
+      "description": "Alias completo de /users; escolha apenas um caminho para cada operação.",
+      "item": [
+        {
+          "name": "Criar usuário",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/usuarios",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            },
+            "description": "Requer ADMIN. CPF e e-mail únicos. Senha com pelo menos 8 caracteres, letras e números. role: admin ou operator. Salva user_uuid. Usuário criado na comarca do administrador.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Usuário Postman\",\n  \"cpf\": \"{{new_user_cpf}}\",\n  \"email\": \"{{new_user_email}}\",\n  \"password\": \"{{new_user_password}}\",\n  \"role\": \"operator\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP esperado: 201', function () { pm.response.to.have.status(201); });",
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "    const data = pm.response.json();",
+                  "    if (data.id) pm.collectionVariables.set('user_uuid', data.id);",
+                  "    ",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Listar e buscar usuários",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/usuarios?page={{page}}&size={{page_size}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usuarios"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "{{page}}",
+                  "description": "Página inicial 0; valor não negativo."
+                },
+                {
+                  "key": "size",
+                  "value": "{{page_size}}",
+                  "description": "Quantidade por página. Todas as listagens: 1 a 100; padrão 20."
+                },
+                {
+                  "key": "search",
+                  "value": "{{user_search}}",
+                  "description": "Termo de busca.",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Requer ADMIN. search opcional. Paginação padrão da API: page=0, size=20; size de 1 a 100. Parâmetros inválidos retornam 422."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP esperado: 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Consultar usuário",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/usuarios/{{user_uuid}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{user_uuid}}"
+              ]
+            },
+            "description": "Requer ADMIN. Informe user_uuid ou execute Criar usuário."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP esperado: 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Atualizar usuário",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/usuarios/{{user_uuid}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{user_uuid}}"
+              ]
+            },
+            "description": "Requer ADMIN. name, email e role obrigatórios; password pode ser omitida para manter a senha. CPF não é alterado por esta rota. Não é permitido alterar o próprio perfil.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Usuário Postman atualizado\",\n  \"email\": \"{{new_user_email}}\",\n  \"role\": \"operator\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP esperado: 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Desativar usuário",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/usuarios/{{user_uuid}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{user_uuid}}"
+              ]
+            },
+            "description": "Requer ADMIN. Desativação lógica. Não permite remover o próprio usuário. Use o UUID de um usuário que deseja desativar; resposta 204 sem corpo."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP esperado: 204', function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{admin_access_token}}",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "4. Processos",
+      "description": "Processos ativos da comarca autenticada.",
+      "item": [
+        {
+          "name": "Listar e buscar processos ativos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/processes?page={{page}}&size={{page_size}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "processes"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "{{page}}",
+                  "description": "Página inicial 0; valor não negativo."
+                },
+                {
+                  "key": "size",
+                  "value": "{{page_size}}",
+                  "description": "Quantidade por página. Todas as listagens: 1 a 100; padrão 20."
+                },
+                {
+                  "key": "search",
+                  "value": "{{active_process_number}}",
+                  "description": "Busca de processo.",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Lista processos ativos da comarca, com contagem e nomes dos apenados ativos vinculados. Ative search para buscar. Somente listagem está implementada neste controller."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP esperado: 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. Apenados",
+      "description": "Cadastro, consulta, edição e fotos de apenados.",
+      "item": [
+        {
+          "name": "Listar apenados",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/convicted?page={{page}}&size={{page_size}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "convicted"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "{{page}}",
+                  "description": "Página inicial 0; valor não negativo."
+                },
+                {
+                  "key": "size",
+                  "value": "{{page_size}}",
+                  "description": "Quantidade por página. Todas as listagens: 1 a 100; padrão 20."
+                },
+                {
+                  "key": "search",
+                  "value": "{{convicted_search}}",
+                  "description": "Nome, CPF ou número do processo.",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Lista apenados ativos da comarca. search aceita nome, CPF ou número do processo. Ative a linha search para filtrar."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP esperado: 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Buscar por nome",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/convicted?search={{convicted_search}}&page={{page}}&size={{page_size}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "convicted"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "{{convicted_search}}",
+                  "description": "Nome do apenado."
+                },
+                {
+                  "key": "page",
+                  "value": "{{page}}",
+                  "description": "Página inicial 0; valor não negativo."
+                },
+                {
+                  "key": "size",
+                  "value": "{{page_size}}",
+                  "description": "Quantidade por página. Todas as listagens: 1 a 100; padrão 20."
+                }
+              ]
+            },
+            "description": "Busca pelo nome do apenado."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP esperado: 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Buscar por CPF",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/convicted?search={{convicted_cpf}}&page={{page}}&size={{page_size}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "convicted"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "{{convicted_cpf}}",
+                  "description": "CPF do apenado."
+                },
+                {
+                  "key": "page",
+                  "value": "{{page}}",
+                  "description": "Página inicial 0; valor não negativo."
+                },
+                {
+                  "key": "size",
+                  "value": "{{page_size}}",
+                  "description": "Quantidade por página. Todas as listagens: 1 a 100; padrão 20."
+                }
+              ]
+            },
+            "description": "Busca por CPF, com ou sem pontuação."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP esperado: 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Buscar por número do processo",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/convicted?search={{active_process_number}}&page={{page}}&size={{page_size}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "convicted"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "{{active_process_number}}",
+                  "description": "Número do processo."
+                },
+                {
+                  "key": "page",
+                  "value": "{{page}}",
+                  "description": "Página inicial 0; valor não negativo."
+                },
+                {
+                  "key": "size",
+                  "value": "{{page_size}}",
+                  "description": "Quantidade por página. Todas as listagens: 1 a 100; padrão 20."
+                }
+              ]
+            },
+            "description": "Busca pelo número do processo."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP esperado: 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Criar apenado",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/convicted",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "convicted"
+              ]
+            },
+            "description": "Salva convicted_uuid, convicted_cpf e o processo ativo vinculado. CPF deve ser único e válido. Data de nascimento não pode ser futura. processes é opcional; quando preenchido, exige exatamente um principal, IDs únicos de processos ativos da mesma comarca. Foto enviada em rota separada.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Apenado Postman\",\n  \"cpf\": \"{{new_convicted_cpf}}\",\n  \"birth_date\": \"1990-03-11\",\n  \"phone\": \"11988881003\",\n  \"address\": {\n    \"zip_code\": \"01001000\",\n    \"street\": \"Praça da Sé\",\n    \"number\": \"100\",\n    \"complement\": \"Apto 12\",\n    \"neighborhood\": \"Sé\",\n    \"city\": \"São Paulo\",\n    \"state\": \"SP\"\n  },\n  \"employment_status\": \"UNEMPLOYED\",\n  \"processes\": [\n    {\n      \"id\": \"{{active_process_uuid}}\",\n      \"principal\": true\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP esperado: 201', function () { pm.response.to.have.status(201); });",
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "    const data = pm.response.json();",
+                  "    if (data.id) pm.collectionVariables.set('convicted_uuid', data.id);",
+                  "    if (data.cpf) pm.collectionVariables.set('convicted_cpf', data.cpf);",
+                  "    const process = (data.processes || []).find(p => p.principal && p.status === 'ACTIVE')",
+                  "        || (data.processes || []).find(p => p.status === 'ACTIVE');",
+                  "    if (process) {",
+                  "        pm.collectionVariables.set('active_process_uuid', process.id);",
+                  "        pm.collectionVariables.set('active_process_number', process.number);",
+                  "    } else if (Array.isArray(data.processes)) {",
+                  "        pm.collectionVariables.set('active_process_uuid', '');",
+                  "        pm.collectionVariables.set('active_process_number', '');",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Consultar apenado",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/convicted/{{convicted_uuid}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "convicted",
+                "{{convicted_uuid}}"
+              ]
+            },
+            "description": "Consulta apenado ativo da comarca. Atualiza convicted_cpf e o processo ativo a usar nas presenças."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP esperado: 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "    const data = pm.response.json();",
+                  "    if (data.id) pm.collectionVariables.set('convicted_uuid', data.id);",
+                  "    if (data.cpf) pm.collectionVariables.set('convicted_cpf', data.cpf);",
+                  "    const process = (data.processes || []).find(p => p.principal && p.status === 'ACTIVE')",
+                  "        || (data.processes || []).find(p => p.status === 'ACTIVE');",
+                  "    if (process) {",
+                  "        pm.collectionVariables.set('active_process_uuid', process.id);",
+                  "        pm.collectionVariables.set('active_process_number', process.number);",
+                  "    } else if (Array.isArray(data.processes)) {",
+                  "        pm.collectionVariables.set('active_process_uuid', '');",
+                  "        pm.collectionVariables.set('active_process_number', '');",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Atualizar apenado — todos os campos",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/convicted/{{convicted_uuid}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "convicted",
+                "{{convicted_uuid}}"
+              ]
+            },
+            "description": "Apesar de usar PUT, somente os campos enviados são alterados. processes substitui toda a lista e exige exatamente um principal quando não vazia. employment_status aceita FORMAL_WORK, INFORMAL_WORK ou UNEMPLOYED; null limpa essa informação.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Apenado Postman atualizado\",\n  \"cpf\": \"{{convicted_cpf}}\",\n  \"birth_date\": \"1990-03-11\",\n  \"phone\": \"11988881003\",\n  \"address\": {\n    \"zip_code\": \"01001000\",\n    \"street\": \"Praça da Sé\",\n    \"number\": \"100\",\n    \"complement\": \"Apto 12\",\n    \"neighborhood\": \"Sé\",\n    \"city\": \"São Paulo\",\n    \"state\": \"SP\"\n  },\n  \"employment_status\": \"FORMAL_WORK\",\n  \"processes\": [\n    {\n      \"id\": \"{{active_process_uuid}}\",\n      \"principal\": true\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP esperado: 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "    const data = pm.response.json();",
+                  "    if (data.id) pm.collectionVariables.set('convicted_uuid', data.id);",
+                  "    if (data.cpf) pm.collectionVariables.set('convicted_cpf', data.cpf);",
+                  "    const process = (data.processes || []).find(p => p.principal && p.status === 'ACTIVE')",
+                  "        || (data.processes || []).find(p => p.status === 'ACTIVE');",
+                  "    if (process) {",
+                  "        pm.collectionVariables.set('active_process_uuid', process.id);",
+                  "        pm.collectionVariables.set('active_process_number', process.number);",
+                  "    } else if (Array.isArray(data.processes)) {",
+                  "        pm.collectionVariables.set('active_process_uuid', '');",
+                  "        pm.collectionVariables.set('active_process_number', '');",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Atualizar apenado — endereço parcial",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/convicted/{{convicted_uuid}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "convicted",
+                "{{convicted_uuid}}"
+              ]
+            },
+            "description": "Altera apenas os campos enviados do endereço. complement=null remove o complemento; os demais campos obrigatórios não aceitam null.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"address\": {\n    \"number\": \"200\",\n    \"complement\": null\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP esperado: 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Atualizar apenado — substituir processos",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/convicted/{{convicted_uuid}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "convicted",
+                "{{convicted_uuid}}"
+              ]
+            },
+            "description": "Substitui toda a lista pelos processos enviados. IDs únicos, ativos e da mesma comarca. Exatamente um principal em lista não vazia. processes=[] remove todos os vínculos.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"processes\": [\n    {\n      \"id\": \"{{active_process_uuid}}\",\n      \"principal\": true\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP esperado: 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "    const data = pm.response.json();",
+                  "    if (data.id) pm.collectionVariables.set('convicted_uuid', data.id);",
+                  "    if (data.cpf) pm.collectionVariables.set('convicted_cpf', data.cpf);",
+                  "    const process = (data.processes || []).find(p => p.principal && p.status === 'ACTIVE')",
+                  "        || (data.processes || []).find(p => p.status === 'ACTIVE');",
+                  "    if (process) {",
+                  "        pm.collectionVariables.set('active_process_uuid', process.id);",
+                  "        pm.collectionVariables.set('active_process_number', process.number);",
+                  "    } else if (Array.isArray(data.processes)) {",
+                  "        pm.collectionVariables.set('active_process_uuid', '');",
+                  "        pm.collectionVariables.set('active_process_number', '');",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Enviar foto de cadastro",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/convicted/{{convicted_uuid}}/photo",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "convicted",
+                "{{convicted_uuid}}",
+                "photo"
+              ]
+            },
+            "description": "Body form-data: photo do tipo File. Selecione o arquivo e use photo_content_type=image/jpeg ou image/png conforme seu conteúdo. Limite: 5 MiB. O Postman gera o boundary multipart. Sucesso retorna 204 No Content, sem corpo.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "photo",
+                  "type": "file",
+                  "src": [],
+                  "contentType": "{{photo_content_type}}",
+                  "description": "Selecione um arquivo local JPG ou PNG de até 5 MiB; ajuste photo_content_type."
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP esperado: 204', function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Consultar foto de cadastro",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "image/jpeg, image/png",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/convicted/{{convicted_uuid}}/photo",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "convicted",
+                "{{convicted_uuid}}",
+                "photo"
+              ]
+            },
+            "description": "Retorna bytes JPEG ou PNG. Foto ausente retorna 404."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP esperado: 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Foto JPEG ou PNG', function () {",
+                  "        pm.expect(pm.response.headers.get('Content-Type')).to.match(/^image\\/(jpeg|png)/);",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "6. Presenças",
+      "description": "Registro multipart, filtros, detalhes, foto e comprovante PDF.",
+      "item": [
+        {
+          "name": "Registrar presença",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/attendance",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "attendance"
+              ]
+            },
+            "description": "Multipart obrigatório: data como Text com Content-Type application/json e photo como File JPEG/PNG até 5 MiB. Apenado e processo precisam estar ativos, na comarca e vinculados entre si. Atualiza endereço, telefone e situação trabalhista do apenado. Salva attendance_uuid. Para emitir o comprovante também é necessária a foto de cadastro do apenado.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "data",
+                  "type": "text",
+                  "value": "{\n  \"convicted_id\": \"{{convicted_uuid}}\",\n  \"process_id\": \"{{active_process_uuid}}\",\n  \"address\": {\n    \"zip_code\": \"01001000\",\n    \"street\": \"Praça da Sé\",\n    \"number\": \"100\",\n    \"complement\": \"Apto 12\",\n    \"neighborhood\": \"Sé\",\n    \"city\": \"São Paulo\",\n    \"state\": \"SP\"\n  },\n  \"phone\": \"11988881003\",\n  \"employment_status\": \"FORMAL_WORK\"\n}",
+                  "contentType": "application/json",
+                  "description": "JSON obrigatório com convicted_id e process_id."
+                },
+                {
+                  "key": "photo",
+                  "type": "file",
+                  "src": [],
+                  "contentType": "{{photo_content_type}}",
+                  "description": "Selecione um arquivo local JPG ou PNG de até 5 MiB; ajuste photo_content_type."
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP esperado: 201', function () { pm.response.to.have.status(201); });",
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "    const data = pm.response.json();",
+                  "    if (data.id) pm.collectionVariables.set('attendance_uuid', data.id);",
+                  "    ",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Listar e buscar presenças",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/attendance?page={{page}}&size={{page_size}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "attendance"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "{{page}}",
+                  "description": "Página inicial 0; valor não negativo."
+                },
+                {
+                  "key": "size",
+                  "value": "{{page_size}}",
+                  "description": "Quantidade por página. Todas as listagens: 1 a 100; padrão 20."
+                },
+                {
+                  "key": "search",
+                  "value": "{{attendance_search}}",
+                  "description": "Busca parcial por nome do apenado, CPF ou número do processo, com ou sem pontuação.",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Lista presenças da comarca autenticada, incluindo o histórico de apenados e processos inativos. Ative search para buscar parcialmente por nome do apenado, CPF ou número do processo. CPF e processo aceitam dígitos com ou sem pontuação. Sem search, ou com search vazio, lista todas as presenças da comarca. Ordenação por criação decrescente. Paginação padrão: page=0, size=20; size de 1 a 100."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP esperado: 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Consultar presença",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/attendance/{{attendance_uuid}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "attendance",
+                "{{attendance_uuid}}"
+              ]
+            },
+            "description": "Detalhes da presença na comarca do usuário autenticado."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP esperado: 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Consultar foto da presença",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "image/jpeg, image/png",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/attendance/{{attendance_uuid}}/photo",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "attendance",
+                "{{attendance_uuid}}",
+                "photo"
+              ]
+            },
+            "description": "Retorna bytes JPEG ou PNG da foto capturada na presença."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP esperado: 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Foto JPEG ou PNG', function () {",
+                  "        pm.expect(pm.response.headers.get('Content-Type')).to.match(/^image\\/(jpeg|png)/);",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Visualizar comprovante PDF",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/pdf",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/attendance/{{attendance_uuid}}/receipt?disposition=inline",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "attendance",
+                "{{attendance_uuid}}",
+                "receipt"
+              ],
+              "query": [
+                {
+                  "key": "disposition",
+                  "value": "inline",
+                  "description": "inline para visualização; attachment para download."
+                }
+              ]
+            },
+            "description": "disposition=inline. Na primeira consulta gera e persiste o PDF. Precisa das fotos da presença e de cadastro do apenado; foto de cadastro ausente retorna 409. Consultas posteriores reutilizam o PDF."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP esperado: 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Comprovante PDF', function () {",
+                  "        pm.expect(pm.response.headers.get('Content-Type')).to.include('application/pdf');",
+                  "        pm.expect(pm.response.text().slice(0, 5)).to.eql('%PDF-');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Baixar comprovante PDF",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/pdf",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/attendance/{{attendance_uuid}}/receipt?disposition=attachment",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "attendance",
+                "{{attendance_uuid}}",
+                "receipt"
+              ],
+              "query": [
+                {
+                  "key": "disposition",
+                  "value": "attachment",
+                  "description": "Solicita Content-Disposition attachment."
+                }
+              ]
+            },
+            "description": "disposition=attachment. Use Send and Download para salvar os bytes do PDF. Mesmos requisitos da visualização do comprovante."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP esperado: 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Comprovante PDF', function () {",
+                  "        pm.expect(pm.response.headers.get('Content-Type')).to.include('application/pdf');",
+                  "        pm.expect(pm.response.text().slice(0, 5)).to.eql('%PDF-');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "7. Status",
+      "description": "Rota protegida conforme SecurityConfiguration.",
+      "item": [
+        {
+          "name": "Consultar tempo de atividade",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "status"
+              ]
+            },
+            "description": "Requer Bearer. Retorna uptime em segundos."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP esperado: 200', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "8. Desativação de apenados",
+      "description": "Execute quando desejar desativar um apenado sem processos ativos.",
+      "item": [
+        {
+          "name": "Desativar apenado sem processo ativo",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/convicted/{{removable_convicted_uuid}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "convicted",
+                "{{removable_convicted_uuid}}"
+              ]
+            },
+            "description": "Desativação lógica. Informe removable_convicted_uuid. Apenado deve ser ativo e da comarca; vínculo com processo ativo causa 409. Resposta de sucesso: 204 sem corpo."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP esperado: 204', function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    }
+  ]
+}

@@ -8,7 +8,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.CacheControl;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -40,7 +39,6 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 
-@Validated
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/convicted")
@@ -64,12 +62,12 @@ public class ConvictedController {
 
     @GetMapping
     public PageResponse<ConvictedListItemResponse> list(
-        @RequestParam(name = "search", required = false) String query,
+        @RequestParam(required = false) String search,
         @RequestParam(defaultValue = "0") @Min(0) int page,
         @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
         @AuthenticationPrincipal AuthContext authContext
     ) {
-        return listUseCase.execute(query, page, size, authContext);
+        return listUseCase.execute(search, page, size, authContext);
     }
 
     @GetMapping("/{uuid}")
@@ -99,13 +97,14 @@ public class ConvictedController {
     }
 
     @PutMapping(value = "/{uuid}/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ConvictedResponse updatePhoto(
+    public ResponseEntity<Void> updatePhoto(
         @PathVariable UUID uuid,
         @RequestPart("photo") MultipartFile photo,
         @AuthenticationPrincipal AuthContext authContext
     ) {
         try {
-            return updatePhotoUseCase.execute(uuid, photo.getBytes(), photo.getContentType(), authContext);
+            updatePhotoUseCase.execute(uuid, photo.getBytes(), photo.getContentType(), authContext);
+            return ResponseEntity.noContent().build();
         } catch (IOException exception) {
             throw new ValidationException("photo", "Não foi possível ler a foto enviada");
         }

@@ -2,6 +2,7 @@ package br.com.sicape.api.application.common.media;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -41,6 +42,17 @@ class MediaAssetStoreTest {
             TransactionSynchronizationManager.clearSynchronization();
         }
         TransactionSynchronizationManager.setActualTransactionActive(false);
+    }
+
+    @Test
+    void storesPhotosAndReceiptsUnderTheirOwnDirectories() {
+        MediaAsset photo = store.save(new byte[]{1}, "image/jpeg", MediaAssetKind.PHOTO);
+        MediaAsset receipt = store.save(new byte[]{2}, "application/pdf", MediaAssetKind.RECEIPT);
+
+        assertThat(photo.getStorageKey()).isEqualTo("photo/" + photo.getUuid());
+        assertThat(receipt.getStorageKey()).isEqualTo("receipt/" + receipt.getUuid());
+        verify(storage).save(photo.getStorageKey(), new byte[]{1}, "image/jpeg");
+        verify(storage).save(receipt.getStorageKey(), new byte[]{2}, "application/pdf");
     }
 
     @Test
@@ -158,6 +170,6 @@ class MediaAssetStoreTest {
 
     private static MediaAsset photo() {
         UUID uuid = UUID.randomUUID();
-        return new MediaAsset(uuid, uuid.toString(), "image/jpeg", 3, MediaAssetKind.PHOTO);
+        return new MediaAsset(uuid, "photo/" + uuid, "image/jpeg", 3, MediaAssetKind.PHOTO);
     }
 }
