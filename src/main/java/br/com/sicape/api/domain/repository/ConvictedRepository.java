@@ -49,7 +49,7 @@ public interface ConvictedRepository extends BaseRepository<Convicted> {
             left join convicted.processes link
             left join link.process process
             where convicted.district = :district
-              and convicted.status = :status
+              and (:status is null or convicted.status = :status)
               and (
                 :search = ''
                 or lower(convicted.name) like concat('%', :search, '%')
@@ -63,7 +63,7 @@ public interface ConvictedRepository extends BaseRepository<Convicted> {
             left join convicted.processes link
             left join link.process process
             where convicted.district = :district
-              and convicted.status = :status
+              and (:status is null or convicted.status = :status)
               and (
                 :search = ''
                 or lower(convicted.name) like concat('%', :search, '%')

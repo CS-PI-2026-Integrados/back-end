@@ -130,6 +130,12 @@
       "description": "Nome para busca opcional."
     },
     {
+      "key": "convicted_status",
+      "value": "ACTIVE",
+      "type": "string",
+      "description": "Filtro opcional de apenados: ACTIVE ou INACTIVE. Sem status, lista ambos."
+    },
+    {
       "key": "active_process_uuid",
       "value": "00000000-0000-0000-0000-0000000000c8",
       "type": "string",
@@ -993,10 +999,16 @@
                   "value": "{{convicted_search}}",
                   "description": "Nome, CPF ou número do processo.",
                   "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "{{convicted_status}}",
+                  "description": "ACTIVE ou INACTIVE. Omita para listar todos os status.",
+                  "disabled": true
                 }
               ]
             },
-            "description": "Lista apenados ativos da comarca. search aceita nome, CPF ou número do processo. Ative a linha search para filtrar."
+            "description": "Lista apenados da comarca, ativos e inativos quando status é omitido. Ative a linha status para filtrar por ACTIVE ou INACTIVE; valor inválido retorna 422. search aceita nome, CPF ou número do processo. Ative a linha search para filtrar."
           },
           "event": [
             {

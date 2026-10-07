@@ -33,6 +33,7 @@ import br.com.sicape.api.application.convicted.usecase.RemoveConvictedUseCase;
 import br.com.sicape.api.application.convicted.usecase.UpdateConvictedPhotoUseCase;
 import br.com.sicape.api.application.convicted.usecase.UpdateConvictedUseCase;
 import br.com.sicape.api.application.oauth.AuthContext;
+import br.com.sicape.api.domain.enums.ConvictedStatus;
 import br.com.sicape.api.domain.exception.ValidationException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -63,11 +64,12 @@ public class ConvictedController {
     @GetMapping
     public PageResponse<ConvictedListItemResponse> list(
         @RequestParam(required = false) String search,
+        @RequestParam(required = false) ConvictedStatus status,
         @RequestParam(defaultValue = "0") @Min(0) int page,
         @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
         @AuthenticationPrincipal AuthContext authContext
     ) {
-        return listUseCase.execute(search, page, size, authContext);
+        return listUseCase.execute(search, status, page, size, authContext);
     }
 
     @GetMapping("/{uuid}")

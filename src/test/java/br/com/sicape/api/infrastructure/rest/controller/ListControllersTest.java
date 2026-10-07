@@ -57,6 +57,7 @@ import br.com.sicape.api.application.user.usecase.ListUsersUseCase;
 import br.com.sicape.api.application.user.usecase.UpdateUserUseCase;
 import br.com.sicape.api.infrastructure.security.JwtAuthenticationFilter;
 import br.com.sicape.api.infrastructure.settings.Settings;
+import br.com.sicape.api.domain.enums.ConvictedStatus;
 
 @WebMvcTest({AttendanceController.class, ConvictedController.class, ProcessController.class, UserController.class})
 @AutoConfigureMockMvc(addFilters = false)
@@ -85,8 +86,8 @@ class ListControllersTest {
     void stubLists() {
         when(listAttendance.execute(nullable(String.class), anyInt(), anyInt(), any()))
             .thenAnswer(invocation -> emptyPage(invocation.getArgument(1), invocation.getArgument(2)));
-        when(listConvicted.execute(nullable(String.class), anyInt(), anyInt(), any()))
-            .thenAnswer(invocation -> emptyPage(invocation.getArgument(1), invocation.getArgument(2)));
+        when(listConvicted.execute(nullable(String.class), nullable(ConvictedStatus.class), anyInt(), anyInt(), any()))
+            .thenAnswer(invocation -> emptyPage(invocation.getArgument(2), invocation.getArgument(3)));
         when(listProcess.execute(nullable(String.class), anyInt(), anyInt(), any()))
             .thenAnswer(invocation -> emptyPage(invocation.getArgument(1), invocation.getArgument(2)));
         when(listUsers.execute(nullable(String.class), anyInt(), anyInt(), any()))
@@ -138,6 +139,22 @@ class ListControllersTest {
 
     static Stream<Arguments> paginationBounds() {
         return PATHS.stream().flatMap(path -> Stream.of(Arguments.of(path, 0, 1), Arguments.of(path, 1, 100)));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"ACTIVE", "INACTIVE"})
+    void forwardsConvictedStatusAndSearch(String convictedStatus) throws Exception {
+        mvc.perform(get("/convicted").param("status", convictedStatus).param("search", "Silva"))
+            .andExpect(status().isOk());
+        verify(listConvicted).execute("Silva", ConvictedStatus.valueOf(convictedStatus), 0, 20, null);
+    }
+
+    @Test
+    void rejectsInvalidConvictedStatus() throws Exception {
+        mvc.perform(get("/convicted").param("status", "INVALID"))
+            .andExpect(status().isUnprocessableEntity())
+            .andExpect(jsonPath("$.fields[*].field", hasItem("status")));
+        verifyNoInteractions(listConvicted);
     }
 
     @ParameterizedTest
@@ -196,7 +213,7 @@ class ListControllersTest {
     private void verifyList(String path, String search, int page, int size) {
         switch (path) {
             case "/attendance" -> verify(listAttendance).execute(search, page, size, null);
-            case "/convicted" -> verify(listConvicted).execute(search, page, size, null);
+            case "/convicted" -> verify(listConvicted).execute(search, null, page, size, null);
             case "/processes" -> verify(listProcess).execute(search, page, size, null);
             case "/users", "/usuarios" -> verify(listUsers).execute(search, page, size, null);
             default -> throw new IllegalArgumentException("Rota não coberta: " + path);
