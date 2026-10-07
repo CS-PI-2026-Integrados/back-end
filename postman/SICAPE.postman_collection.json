@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "SICAPE - API completa",
-    "description": "Template baseado nos controllers, DTOs e validações do checkout atual do SICAPE. Postman Collection v2.1. Contém todas as 33 combinações de método/caminho (incluindo /users e /usuarios), com 40 requisições e variantes.\n\nImporte a coleção e, opcionalmente, o ambiente Development. Execute Login — Administrador antes das rotas protegidas. Credenciais e UUIDs iniciais correspondem aos seeders do perfil development. Em outro ambiente, ajuste as variáveis. Login e refresh capturam tokens; cadastros capturam IDs.\n\nAs duas pastas de usuários são aliases: escolha um caminho para cada operação. Este catálogo contém operações e exemplos alternativos; execute as requisições desejadas individualmente. Cadastros repetidos podem retornar 409, e exclusões desativam registros. Selecione arquivos nos campos photo antes dos uploads.\n\nJSON usa snake_case; parâmetros de consulta seguem os controllers. Grupos usam /group e retornam uuid; cadastros e consultas salvam group_uuid. Participantes só podem ser alterados em grupos PLANNED. /status também requer Bearer. As pastas de usuários usam admin_access_token; as demais herdam access_token. Mantenha tokens e IDs capturados nas variáveis da coleção para evitar sobreposição pelo ambiente. Os scripts validam status HTTP e MIME de arquivos. Respostas reais devem ser verificadas com a API em execução.",
+    "description": "Template baseado nos controllers, DTOs e validações do checkout atual do SICAPE. Postman Collection v2.1. Contém todas as 33 combinações de método/caminho (incluindo /users e /usuarios), com 41 requisições e variantes.\n\nImporte a coleção e, opcionalmente, o ambiente Development. Execute Login — Administrador antes das rotas protegidas. Credenciais e UUIDs iniciais correspondem aos seeders do perfil development. Em outro ambiente, ajuste as variáveis. Login e refresh capturam tokens; cadastros capturam IDs.\n\nAs duas pastas de usuários são aliases: escolha um caminho para cada operação. Este catálogo contém operações e exemplos alternativos; execute as requisições desejadas individualmente. Cadastros repetidos podem retornar 409. Para apenados, use PUT /convicted/{uuid}/status/{status} para inativar ou reativar; o antigo DELETE retorna 405. Selecione arquivos nos campos photo antes dos uploads.\n\nJSON usa snake_case; parâmetros de consulta seguem os controllers. Grupos usam /group e retornam uuid; cadastros e consultas salvam group_uuid. Participantes só podem ser alterados em grupos PLANNED. /status também requer Bearer. As pastas de usuários usam admin_access_token; as demais herdam access_token. Mantenha tokens e IDs capturados nas variáveis da coleção para evitar sobreposição pelo ambiente. Os scripts validam status HTTP, ID e status nas transições de apenados e MIME de arquivos. Respostas reais devem ser verificadas com a API em execução.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -163,7 +163,7 @@
       "key": "removable_convicted_uuid",
       "value": "",
       "type": "string",
-      "description": "UUID de apenado sem processo ativo, a ser desativado."
+      "description": "UUID do apenado da comarca a inativar ou reativar. Para inativar, não pode haver processo ativo vinculado."
     },
     {
       "key": "photo_content_type",
@@ -962,7 +962,7 @@
     },
     {
       "name": "5. Apenados",
-      "description": "Cadastro, consulta, edição e fotos de apenados.",
+      "description": "Cadastro, consulta, edição e fotos de apenados. Inativos continuam disponíveis em listagens, detalhes e fotos, mas alterações de dados, processos e foto retornam 409. Reative na pasta 9 antes de editar.",
       "item": [
         {
           "name": "Listar apenados",
@@ -1263,7 +1263,7 @@
                 "{{convicted_uuid}}"
               ]
             },
-            "description": "Consulta apenado ativo da comarca. Atualiza convicted_cpf e o processo ativo a usar nas presenças."
+            "description": "Consulta apenado ativo ou inativo da comarca. Atualiza convicted_cpf e, quando houver, o processo ativo a usar nas presenças. Registrar presença exige apenado ativo."
           },
           "event": [
             {
@@ -1318,7 +1318,7 @@
                 "{{convicted_uuid}}"
               ]
             },
-            "description": "Apesar de usar PUT, somente os campos enviados são alterados. processes substitui toda a lista e exige exatamente um principal quando não vazia. employment_status aceita FORMAL_WORK, INFORMAL_WORK ou UNEMPLOYED; null limpa essa informação.",
+            "description": "Apesar de usar PUT, somente os campos enviados são alterados. processes substitui toda a lista e exige exatamente um principal quando não vazia. employment_status aceita FORMAL_WORK, INFORMAL_WORK ou UNEMPLOYED; null limpa essa informação. Apenado inativo retorna 409; reative antes de alterar.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Apenado Postman atualizado\",\n  \"cpf\": \"{{convicted_cpf}}\",\n  \"birth_date\": \"1990-03-11\",\n  \"phone\": \"11988881003\",\n  \"address\": {\n    \"zip_code\": \"01001000\",\n    \"street\": \"Praça da Sé\",\n    \"number\": \"100\",\n    \"complement\": \"Apto 12\",\n    \"neighborhood\": \"Sé\",\n    \"city\": \"São Paulo\",\n    \"state\": \"SP\"\n  },\n  \"employment_status\": \"FORMAL_WORK\",\n  \"processes\": [\n    {\n      \"id\": \"{{active_process_uuid}}\",\n      \"principal\": true\n    }\n  ]\n}",
@@ -1382,7 +1382,7 @@
                 "{{convicted_uuid}}"
               ]
             },
-            "description": "Altera apenas os campos enviados do endereço. complement=null remove o complemento; os demais campos obrigatórios não aceitam null.",
+            "description": "Altera apenas os campos enviados do endereço. complement=null remove o complemento; os demais campos obrigatórios não aceitam null. Apenado inativo retorna 409; reative antes de alterar.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"address\": {\n    \"number\": \"200\",\n    \"complement\": null\n  }\n}",
@@ -1432,7 +1432,7 @@
                 "{{convicted_uuid}}"
               ]
             },
-            "description": "Substitui toda a lista pelos processos enviados. IDs únicos, ativos e da mesma comarca. Exatamente um principal em lista não vazia. processes=[] remove todos os vínculos.",
+            "description": "Substitui toda a lista pelos processos enviados. IDs únicos, ativos e da mesma comarca. Exatamente um principal em lista não vazia. processes=[] remove todos os vínculos. Apenado inativo retorna 409; reative antes de alterar.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"processes\": [\n    {\n      \"id\": \"{{active_process_uuid}}\",\n      \"principal\": true\n    }\n  ]\n}",
@@ -1492,7 +1492,7 @@
                 "photo"
               ]
             },
-            "description": "Body form-data: photo do tipo File. Selecione o arquivo e use photo_content_type=image/jpeg ou image/png conforme seu conteúdo. Limite: 5 MiB. O Postman gera o boundary multipart. Sucesso retorna 204 No Content, sem corpo.",
+            "description": "Body form-data: photo do tipo File. Selecione o arquivo e use photo_content_type=image/jpeg ou image/png conforme seu conteúdo. Limite: 5 MiB. O Postman gera o boundary multipart. Sucesso retorna 204 No Content, sem corpo. Apenado inativo retorna 409; reative antes de alterar.",
             "body": {
               "mode": "formdata",
               "formdata": [
@@ -1541,7 +1541,7 @@
                 "photo"
               ]
             },
-            "description": "Retorna bytes JPEG ou PNG. Foto ausente retorna 404."
+            "description": "Retorna bytes JPEG ou PNG de apenado ativo ou inativo da comarca. Foto ausente retorna 404."
           },
           "event": [
             {
@@ -2254,13 +2254,13 @@
       ]
     },
     {
-      "name": "9. Desativação de apenados",
-      "description": "Execute quando desejar desativar um apenado sem processos ativos.",
+      "name": "9. Status de apenados",
+      "description": "Inativação e reativação pela URL, sem corpo, usando removable_convicted_uuid e Bearer da sessão atual. Repetir o status atual é idempotente e preserva a auditoria. Dados, foto e vínculos são preservados; a inativação registra data e usuário, e a reativação limpa esses campos. UUID inexistente ou de outra comarca retorna 404; status inválido retorna 422. O antigo DELETE /convicted/{uuid} retorna 405. Execute as chamadas individualmente conforme a transição desejada.",
       "item": [
         {
-          "name": "Desativar apenado sem processo ativo",
+          "name": "Inativar apenado sem processo ativo",
           "request": {
-            "method": "DELETE",
+            "method": "PUT",
             "header": [
               {
                 "key": "Accept",
@@ -2269,16 +2269,18 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/convicted/{{removable_convicted_uuid}}",
+              "raw": "{{base_url}}/convicted/{{removable_convicted_uuid}}/status/INACTIVE",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "convicted",
-                "{{removable_convicted_uuid}}"
+                "{{removable_convicted_uuid}}",
+                "status",
+                "INACTIVE"
               ]
             },
-            "description": "Desativação lógica. Informe removable_convicted_uuid. Apenado deve ser ativo e da comarca; vínculo com processo ativo causa 409. Resposta de sucesso: 204 sem corpo."
+            "description": "Informe removable_convicted_uuid de um apenado da comarca sem processo ativo. Envia os parâmetros exclusivamente na URL, sem corpo. Vínculo com processo ativo retorna 409. Sucesso retorna 200 com ConvictedResponse e status INACTIVE. Repetir INACTIVE mantém a auditoria; a consulta de detalhes e foto permanece disponível."
           },
           "event": [
             {
@@ -2286,7 +2288,49 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('HTTP esperado: 204', function () { pm.response.to.have.status(204); });"
+                  "pm.test('HTTP esperado: 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('ID do apenado corresponde ao solicitado', function () { pm.expect(pm.response.json().id).to.eql(pm.variables.get('removable_convicted_uuid')); });",
+                  "pm.test('Status esperado: INACTIVE', function () { pm.expect(pm.response.json().status).to.eql('INACTIVE'); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Reativar apenado",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/convicted/{{removable_convicted_uuid}}/status/ACTIVE",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "convicted",
+                "{{removable_convicted_uuid}}",
+                "status",
+                "ACTIVE"
+              ]
+            },
+            "description": "Informe removable_convicted_uuid do apenado da comarca a reativar. Envia os parâmetros exclusivamente na URL, sem corpo. Sucesso retorna 200 com ConvictedResponse e status ACTIVE, limpa os campos de desativação e permite editar dados, processos e foto novamente. Repetir ACTIVE não altera o registro."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP esperado: 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('ID do apenado corresponde ao solicitado', function () { pm.expect(pm.response.json().id).to.eql(pm.variables.get('removable_convicted_uuid')); });",
+                  "pm.test('Status esperado: ACTIVE', function () { pm.expect(pm.response.json().status).to.eql('ACTIVE'); });"
                 ]
               }
             }
