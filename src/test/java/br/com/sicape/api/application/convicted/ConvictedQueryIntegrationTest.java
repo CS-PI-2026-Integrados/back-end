@@ -59,12 +59,13 @@ class ConvictedQueryIntegrationTest {
             "0009876-54.2026.8.26.0001", ProcessStatus.INACTIVE, auth.district()));
 
         active = createConvicted("Arthur Silva", "11144477735", auth, ConvictedStatus.ACTIVE);
-        inactive = createConvicted("Maria Silva", "39053344705", auth, ConvictedStatus.INACTIVE);
+        inactive = createConvicted("Maria Silva", "39053344705", auth, ConvictedStatus.ACTIVE);
         otherActive = createConvicted("Zelia Silva", "16899535009", auth, ConvictedStatus.ACTIVE);
         for (var convicted : List.of(active, inactive, otherActive)) {
             convicted.replaceProcesses(List.of(new ConvictedProcess(convicted, process, true),
                 new ConvictedProcess(convicted, secondProcess, false)));
         }
+        inactive.updateStatus(ConvictedStatus.INACTIVE, auth.user());
         createConvicted("Arthur Silva", "12345678909", foreignAuth, ConvictedStatus.ACTIVE);
         createConvicted("Maria Silva", "52998224725", foreignAuth, ConvictedStatus.INACTIVE);
         entityManager.flush();
@@ -142,7 +143,7 @@ class ConvictedQueryIntegrationTest {
             Phone.of("11988881001"), new Address("12345678", "Rua Central", "10", null, "Centro", "Cidade", "SP"),
             EmploymentStatus.FORMAL_WORK, context.district());
         if (status == ConvictedStatus.INACTIVE) {
-            convicted.remove(context.user());
+            convicted.updateStatus(ConvictedStatus.INACTIVE, context.user());
         }
         return entityManager.persistAndFlush(convicted);
     }

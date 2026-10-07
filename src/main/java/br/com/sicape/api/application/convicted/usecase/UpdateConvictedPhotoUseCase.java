@@ -31,9 +31,9 @@ public class UpdateConvictedPhotoUseCase {
         String declaredContentType,
         AuthContext authContext
     ) {
+        Convicted convicted = finder.findForUpdate(uuid, authContext);
+        convicted.ensureActive();
         String contentType = photoValidator.validate(content, declaredContentType);
-
-        Convicted convicted = finder.find(uuid, authContext);
         MediaAsset replaced = convicted.getPhoto();
         MediaAsset created = media.save(content, contentType, MediaAssetKind.PHOTO);
 

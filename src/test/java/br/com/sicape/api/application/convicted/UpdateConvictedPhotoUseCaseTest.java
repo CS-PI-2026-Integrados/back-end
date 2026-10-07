@@ -1,5 +1,6 @@
 package br.com.sicape.api.application.convicted;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -8,6 +9,7 @@ import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
@@ -25,6 +27,8 @@ import br.com.sicape.api.domain.entity.Convicted;
 import br.com.sicape.api.domain.entity.JudicialDistrict;
 import br.com.sicape.api.domain.entity.MediaAsset;
 import br.com.sicape.api.domain.enums.EmploymentStatus;
+import br.com.sicape.api.domain.enums.ConvictedStatus;
+import br.com.sicape.api.domain.exception.ConflictException;
 import br.com.sicape.api.domain.enums.MediaAssetKind;
 import br.com.sicape.api.domain.repository.ConvictedRepository;
 import br.com.sicape.api.domain.valueobject.Address;
@@ -49,7 +53,7 @@ class UpdateConvictedPhotoUseCaseTest {
         convicted = convicted();
         convicted.completePhoto(replaced);
 
-        when(finder.find(convictedId, auth)).thenReturn(convicted);
+        when(finder.findForUpdate(convictedId, auth)).thenReturn(convicted);
         when(media.save(any(), eq("image/jpeg"), eq(MediaAssetKind.PHOTO))).thenReturn(created);
         when(repository.saveAndFlush(convicted)).thenReturn(convicted);
         useCase = new UpdateConvictedPhotoUseCase(
@@ -93,7 +97,7 @@ class UpdateConvictedPhotoUseCaseTest {
     @Test
     void doesNotScheduleRemovalWhenThereWasNoPreviousPhoto() {
         convicted = convicted();
-        when(finder.find(convictedId, auth)).thenReturn(convicted);
+        when(finder.findForUpdate(convictedId, auth)).thenReturn(convicted);
         when(repository.saveAndFlush(convicted)).thenReturn(convicted);
 
         execute();
@@ -103,6 +107,16 @@ class UpdateConvictedPhotoUseCaseTest {
 
     private void execute() {
         useCase.execute(convictedId, JPEG, "image/jpeg", auth);
+    }
+
+    @Test
+    void rejectsInactiveConvictedBeforeSavingMedia() {
+        convicted.updateStatus(ConvictedStatus.INACTIVE, null);
+
+        assertThatThrownBy(this::execute)
+            .isInstanceOf(ConflictException.class).hasMessageContaining("Reative");
+        verifyNoInteractions(media, repository);
+        assertThat(convicted.getPhoto()).isSameAs(replaced);
     }
 
     private Convicted convicted() {

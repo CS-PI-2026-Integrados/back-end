@@ -10,6 +10,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
@@ -148,6 +149,18 @@ public class ApiErrorHandler {
             request,
             List.of()
         );
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiErrorResponse> handleMethodNotSupported(
+        HttpRequestMethodNotSupportedException exception,
+        HttpServletRequest request
+    ) {
+        var response = buildResponse(HttpStatus.METHOD_NOT_ALLOWED, "Método HTTP não permitido.", exception, request, List.of());
+        return ResponseEntity.status(response.getStatusCode())
+            .headers(response.getHeaders())
+            .headers(exception.getHeaders())
+            .body(response.getBody());
     }
 
     private ResponseEntity<ApiErrorResponse> buildResponse(

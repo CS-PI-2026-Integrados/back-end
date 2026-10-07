@@ -2,6 +2,7 @@ package br.com.sicape.api.infrastructure.rest.controller;
 
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.nullable;
@@ -9,15 +10,18 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -46,7 +50,8 @@ import br.com.sicape.api.application.convicted.usecase.CreateConvictedUseCase;
 import br.com.sicape.api.application.convicted.usecase.GetConvictedPhotoUseCase;
 import br.com.sicape.api.application.convicted.usecase.GetConvictedUseCase;
 import br.com.sicape.api.application.convicted.usecase.ListConvictedUseCase;
-import br.com.sicape.api.application.convicted.usecase.RemoveConvictedUseCase;
+import br.com.sicape.api.application.convicted.usecase.UpdateConvictedStatusUseCase;
+import br.com.sicape.api.application.convicted.dto.response.ConvictedResponse;
 import br.com.sicape.api.application.convicted.usecase.UpdateConvictedPhotoUseCase;
 import br.com.sicape.api.application.convicted.usecase.UpdateConvictedUseCase;
 import br.com.sicape.api.application.process.usecase.ListProcessUseCase;
@@ -58,6 +63,8 @@ import br.com.sicape.api.application.user.usecase.UpdateUserUseCase;
 import br.com.sicape.api.infrastructure.security.JwtAuthenticationFilter;
 import br.com.sicape.api.infrastructure.settings.Settings;
 import br.com.sicape.api.domain.enums.ConvictedStatus;
+import br.com.sicape.api.domain.exception.ConflictException;
+import br.com.sicape.api.domain.exception.ResourceNotFoundException;
 
 @WebMvcTest({AttendanceController.class, ConvictedController.class, ProcessController.class, UserController.class})
 @AutoConfigureMockMvc(addFilters = false)
@@ -65,7 +72,7 @@ import br.com.sicape.api.domain.enums.ConvictedStatus;
 @Import(Settings.class)
 @MockitoBean(types = {
     GetAttendancePhotoUseCase.class, GetAttendanceReceiptUseCase.class, GetAttendanceUseCase.class,
-    GetConvictedPhotoUseCase.class, GetConvictedUseCase.class, RemoveConvictedUseCase.class,
+    GetConvictedPhotoUseCase.class, GetConvictedUseCase.class,
     UpdateConvictedPhotoUseCase.class, UpdateConvictedUseCase.class,
     GetUserUseCase.class, DeleteUserUseCase.class, JwtAuthenticationFilter.class
 })
@@ -81,6 +88,7 @@ class ListControllersTest {
     @MockitoBean private CreateConvictedUseCase createConvicted;
     @MockitoBean private CreateUserUseCase createUser;
     @MockitoBean private UpdateUserUseCase updateUser;
+    @MockitoBean private UpdateConvictedStatusUseCase updateConvictedStatus;
 
     @BeforeEach
     void stubLists() {
@@ -155,6 +163,56 @@ class ListControllersTest {
             .andExpect(status().isUnprocessableEntity())
             .andExpect(jsonPath("$.fields[*].field", hasItem("status")));
         verifyNoInteractions(listConvicted);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"ACTIVE", "INACTIVE"})
+    void updatesConvictedStatusUsingOnlyUrl(String requestedStatus) throws Exception {
+        UUID id = UUID.randomUUID();
+        var convictedStatus = ConvictedStatus.valueOf(requestedStatus);
+        when(updateConvictedStatus.execute(id, convictedStatus, null)).thenReturn(
+            new ConvictedResponse(id, "Apenado", "52998224725", null, null, null, null, convictedStatus, List.of()));
+
+        mvc.perform(put("/convicted/{uuid}/status/{status}", id, requestedStatus))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value(id.toString()))
+            .andExpect(jsonPath("$.status").value(requestedStatus));
+        verify(updateConvictedStatus).execute(id, convictedStatus, null);
+    }
+
+    @Test
+    void rejectsInvalidStatusInUrl() throws Exception {
+        mvc.perform(put("/convicted/{uuid}/status/INVALID", UUID.randomUUID()))
+            .andExpect(status().isUnprocessableEntity())
+            .andExpect(jsonPath("$.fields[*].field", hasItem("status")));
+        verifyNoInteractions(updateConvictedStatus);
+    }
+
+    @Test
+    void rejectsRemovedConvictedDeleteRoute() throws Exception {
+        mvc.perform(delete("/convicted/{uuid}", UUID.randomUUID()))
+            .andExpect(status().isMethodNotAllowed())
+            .andExpect(header().string("Allow", containsString("PUT")));
+        verifyNoInteractions(updateConvictedStatus);
+    }
+
+    @Test
+    void returnsConflictWhenDeactivationIsBlocked() throws Exception {
+        UUID id = UUID.randomUUID();
+        when(updateConvictedStatus.execute(id, ConvictedStatus.INACTIVE, null))
+            .thenThrow(new ConflictException("status", "O apenado possui processo ativo."));
+        mvc.perform(put("/convicted/{uuid}/status/INACTIVE", id))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.fields[*].field", hasItem("status")));
+    }
+
+    @Test
+    void returnsNotFoundForUnavailableConvicted() throws Exception {
+        UUID id = UUID.randomUUID();
+        when(updateConvictedStatus.execute(id, ConvictedStatus.ACTIVE, null))
+            .thenThrow(new ResourceNotFoundException("Condenado não encontrado."));
+        mvc.perform(put("/convicted/{uuid}/status/ACTIVE", id))
+            .andExpect(status().isNotFound());
     }
 
     @ParameterizedTest

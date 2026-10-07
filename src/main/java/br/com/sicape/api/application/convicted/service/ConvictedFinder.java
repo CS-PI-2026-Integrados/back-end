@@ -17,6 +17,16 @@ public class ConvictedFinder {
     private final ConvictedRepository repository;
 
     public Convicted find(UUID uuid, AuthContext authContext) {
+        return repository.findByUuidAndDistrict(uuid, authContext.district())
+            .orElseThrow(() -> new ResourceNotFoundException("Condenado não encontrado."));
+    }
+
+    public Convicted findForUpdate(UUID uuid, AuthContext authContext) {
+        return repository.findForUpdate(uuid, authContext.district())
+            .orElseThrow(() -> new ResourceNotFoundException("Condenado não encontrado."));
+    }
+
+    public Convicted findActive(UUID uuid, AuthContext authContext) {
         return repository.findByUuidAndDistrictAndStatusNot(
             uuid,
             authContext.district(),

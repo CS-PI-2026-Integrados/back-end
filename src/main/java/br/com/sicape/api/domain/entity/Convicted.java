@@ -93,6 +93,7 @@ public class Convicted extends BaseEntity {
     }
 
     public void updateName(String name) {
+        ensureActive();
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("O nome é obrigatório");
         }
@@ -100,6 +101,7 @@ public class Convicted extends BaseEntity {
     }
 
     public void updateCpf(Cpf cpf) {
+        ensureActive();
         if (cpf == null) {
             throw new IllegalArgumentException("O CPF é obrigatório");
         }
@@ -107,6 +109,7 @@ public class Convicted extends BaseEntity {
     }
 
     public void updateBirthDate(LocalDate birthDate) {
+        ensureActive();
         if (birthDate == null || birthDate.isAfter(LocalDate.now())) {
             throw new IllegalArgumentException("A data de nascimento não pode ser futura");
         }
@@ -114,6 +117,7 @@ public class Convicted extends BaseEntity {
     }
 
     public void updatePhone(Phone phone) {
+        ensureActive();
         if (phone == null) {
             throw new IllegalArgumentException("O telefone é obrigatório");
         }
@@ -121,6 +125,7 @@ public class Convicted extends BaseEntity {
     }
 
     public void updateAddress(Address address) {
+        ensureActive();
         if (address == null) {
             throw new IllegalArgumentException("O endereço é obrigatório");
         }
@@ -128,10 +133,12 @@ public class Convicted extends BaseEntity {
     }
 
     public void updateEmploymentStatus(EmploymentStatus employmentStatus) {
+        ensureActive();
         this.employmentStatus = employmentStatus;
     }
 
     public void replaceProcesses(Collection<ConvictedProcess> newProcesses) {
+        ensureActive();
         if (!newProcesses.isEmpty()
             && newProcesses.stream().filter(ConvictedProcess::isPrincipal).count() != 1) {
             throw new IllegalArgumentException("Informe exatamente um processo principal");
@@ -145,21 +152,31 @@ public class Convicted extends BaseEntity {
     }
 
     public void completePhoto(MediaAsset photo) {
-        if (status == ConvictedStatus.INACTIVE) {
-            throw new IllegalStateException("Não é possível alterar a foto de um condenado inativo");
-        }
+        ensureActive();
         if (photo == null || photo.getKind() != MediaAssetKind.PHOTO) {
             throw new IllegalArgumentException("A foto deve ser uma mídia do tipo foto");
         }
         this.photo = photo;
     }
 
-    public void remove(User user) {
-        if (hasActiveProcess()) {
-            throw new ConflictException("Não é possível remover um condenado vinculado a processo ativo.");
+    public void ensureActive() {
+        if (status != ConvictedStatus.ACTIVE) {
+            throw new ConflictException("status", "Reative o apenado antes de alterar seus dados, processos ou foto.");
         }
-        this.status = ConvictedStatus.INACTIVE;
-        this.deactivatedAt = Instant.now();
-        this.deactivatedBy = user;
+    }
+
+    public void updateStatus(ConvictedStatus status, User user) {
+        if (status == null) {
+            throw new IllegalArgumentException("O status é obrigatório");
+        }
+        if (this.status == status) {
+            return;
+        }
+        if (status == ConvictedStatus.INACTIVE && hasActiveProcess()) {
+            throw new ConflictException("status", "Não é possível inativar um apenado vinculado a processo ativo.");
+        }
+        this.status = status;
+        this.deactivatedAt = status == ConvictedStatus.INACTIVE ? Instant.now() : null;
+        this.deactivatedBy = status == ConvictedStatus.INACTIVE ? user : null;
     }
 }

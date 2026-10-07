@@ -25,7 +25,7 @@ public class RemoveConvictedFromGroupUseCase {
     public void execute(UUID groupUuid, UUID convictedUuid, AuthContext authContext) {
         Group group = groupFinder.find(groupUuid, authContext);
         validatePlanned(group);
-        group.removeConvicted(convictedFinder.find(convictedUuid, authContext));
+        group.removeConvicted(convictedFinder.findActive(convictedUuid, authContext));
         groupRepository.save(group);
     }
 

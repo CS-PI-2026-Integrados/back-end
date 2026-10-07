@@ -8,7 +8,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.CacheControl;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -29,7 +28,7 @@ import br.com.sicape.api.application.convicted.usecase.CreateConvictedUseCase;
 import br.com.sicape.api.application.convicted.usecase.GetConvictedPhotoUseCase;
 import br.com.sicape.api.application.convicted.usecase.GetConvictedUseCase;
 import br.com.sicape.api.application.convicted.usecase.ListConvictedUseCase;
-import br.com.sicape.api.application.convicted.usecase.RemoveConvictedUseCase;
+import br.com.sicape.api.application.convicted.usecase.UpdateConvictedStatusUseCase;
 import br.com.sicape.api.application.convicted.usecase.UpdateConvictedPhotoUseCase;
 import br.com.sicape.api.application.convicted.usecase.UpdateConvictedUseCase;
 import br.com.sicape.api.application.oauth.AuthContext;
@@ -48,7 +47,7 @@ public class ConvictedController {
     private final ListConvictedUseCase listUseCase;
     private final GetConvictedUseCase getUseCase;
     private final UpdateConvictedUseCase updateUseCase;
-    private final RemoveConvictedUseCase removeUseCase;
+    private final UpdateConvictedStatusUseCase updateStatusUseCase;
     private final UpdateConvictedPhotoUseCase updatePhotoUseCase;
     private final GetConvictedPhotoUseCase getPhotoUseCase;
 
@@ -89,13 +88,13 @@ public class ConvictedController {
         return updateUseCase.execute(uuid, request, authContext);
     }
 
-    @DeleteMapping("/{uuid}")
-    public ResponseEntity<Void> remove(
+    @PutMapping("/{uuid}/status/{status}")
+    public ConvictedResponse updateStatus(
         @PathVariable UUID uuid,
+        @PathVariable ConvictedStatus status,
         @AuthenticationPrincipal AuthContext authContext
     ) {
-        removeUseCase.execute(uuid, authContext);
-        return ResponseEntity.noContent().build();
+        return updateStatusUseCase.execute(uuid, status, authContext);
     }
 
     @PutMapping(value = "/{uuid}/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
