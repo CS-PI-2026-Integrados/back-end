@@ -81,9 +81,13 @@ class ConvictedQueryIntegrationTest {
             .containsExactly(active.getUuid(), inactive.getUuid());
         assertThat(first.totalElements()).isEqualTo(3);
         assertThat(first.totalPages()).isEqualTo(2);
+        assertThat(first.content()).extracting(ConvictedListItemResponse::status)
+            .containsExactly(ConvictedStatus.ACTIVE, ConvictedStatus.INACTIVE);
         assertThat(second.content()).extracting(ConvictedListItemResponse::id)
             .containsExactly(otherActive.getUuid());
         assertThat(second.totalElements()).isEqualTo(3);
+        assertThat(second.content()).extracting(ConvictedListItemResponse::status)
+            .containsExactly(ConvictedStatus.ACTIVE);
     }
 
     @ParameterizedTest
@@ -98,6 +102,8 @@ class ConvictedQueryIntegrationTest {
                 .extracting(ConvictedListItemResponse::id).containsExactly(expectedFirst.getUuid());
             assertThat(result.totalElements()).isEqualTo(expectedCount);
             assertThat(result.totalPages()).isEqualTo((int) expectedCount);
+            assertThat(result.content()).extracting(ConvictedListItemResponse::status)
+                .containsExactly(status);
         }
         var second = listUseCase.execute("Silva", status, 1, 1, auth);
         assertThat(second.content()).extracting(ConvictedListItemResponse::id)

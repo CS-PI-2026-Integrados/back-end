@@ -74,6 +74,7 @@ public class ListConvictedUseCase {
                 convicted.getPhone().value(),
                 AddressResponse.from(convicted.getAddress()),
                 convicted.getEmploymentStatus(),
+                convicted.getStatus(),
                 main == null ? null : main.getProcess().getNumber(),
                 main == null ? 0 : counts.getOrDefault(main.getProcess().getUuid(), 0L)
             );
