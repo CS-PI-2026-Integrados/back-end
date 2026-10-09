@@ -14,6 +14,9 @@ public class UpdateGroupRequest {
     private String name;
     private boolean nameProvided;
 
+    private String description;
+    private boolean descriptionProvided;
+
     private String subject;
     private boolean subjectProvided;
 
@@ -44,6 +47,19 @@ public class UpdateGroupRequest {
 
     public boolean isNameProvided() {
         return nameProvided;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+        this.descriptionProvided = true;
+    }
+
+    public boolean isDescriptionProvided() {
+        return descriptionProvided;
     }
 
     public String getSubject() {
@@ -112,7 +128,7 @@ public class UpdateGroupRequest {
     }
 
     public boolean hasChanges() {
-        return nameProvided || subjectProvided || presentersProvided || predictedEndDateProvided
+        return nameProvided || descriptionProvided || subjectProvided || presentersProvided || predictedEndDateProvided
             || statusProvided || startDateProvided;
     }
 

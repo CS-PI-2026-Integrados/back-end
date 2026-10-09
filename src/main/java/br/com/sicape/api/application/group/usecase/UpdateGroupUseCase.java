@@ -35,6 +35,9 @@ public class UpdateGroupUseCase {
         if (request.isNameProvided()) {
             group.setName(request.getName());
         }
+        if (request.isDescriptionProvided()) {
+            group.setDescription(request.getDescription());
+        }
         if (request.isSubjectProvided()) {
             group.setSubject(request.getSubject());
         }
@@ -78,6 +81,10 @@ public class UpdateGroupUseCase {
 
         if (request.isNameProvided() && (request.getName() == null || request.getName().isBlank())) {
             violations.add(new FieldViolation("name", "O nome do grupo não pode estar vazio"));
+        }
+
+        if (request.isDescriptionProvided() && (request.getDescription() == null || request.getDescription().isBlank())) {
+            violations.add(new FieldViolation("description", "A descrição do grupo não pode estar vazia"));
         }
 
         if (request.isSubjectProvided() && (request.getSubject() == null || request.getSubject().isBlank())) {
