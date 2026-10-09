@@ -30,6 +30,7 @@ public class ListConvictedUseCase {
     @Transactional(readOnly = true)
     public PageResponse<ConvictedListItemResponse> execute(
         String search,
+        ConvictedStatus status,
         int page,
         int size,
         AuthContext authContext
@@ -40,7 +41,7 @@ public class ListConvictedUseCase {
 
         Page<Convicted> result = repository.search(
             authContext.district(),
-            ConvictedStatus.ACTIVE,
+            status,
             search,
             digits,
             PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "name"))
@@ -73,6 +74,7 @@ public class ListConvictedUseCase {
                 convicted.getPhone().value(),
                 AddressResponse.from(convicted.getAddress()),
                 convicted.getEmploymentStatus(),
+                convicted.getStatus(),
                 main == null ? null : main.getProcess().getNumber(),
                 main == null ? 0 : counts.getOrDefault(main.getProcess().getUuid(), 0L)
             );

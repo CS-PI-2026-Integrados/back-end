@@ -9,6 +9,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.test.web.servlet.MockMvc;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 
@@ -40,7 +45,24 @@ import br.com.sicape.api.domain.valueobject.Cpf;
     "jwt.access-token-duration=15m"
 })
 @ActiveProfiles("development")
+@AutoConfigureMockMvc
 class AuthenticationIntegrationTest {
+
+    @Autowired private MockMvc mvc;
+
+    @Test
+    void metricsRequireAuthenticationAndResolveTheAuthenticatedDistrict() throws Exception {
+        for (String path : new String[]{"/convicted/metrics", "/attendance/metrics"}) {
+            mvc.perform(get(path)).andExpect(status().isForbidden());
+        }
+        var login = createSessionUseCase.execute(new CreateSessionRequest(CPF, PASSWORD));
+        mvc.perform(get("/convicted/metrics").header("Authorization", "Bearer " + login.accessToken()))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(0));
+        mvc.perform(get("/attendance/metrics").header("Authorization", "Bearer " + login.accessToken()))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.last_7_days").value(0))
+            .andExpect(jsonPath("$.monthly_counts.length()").value(6))
+            .andExpect(jsonPath("$.recent_activities").isEmpty());
+    }
 
     private static final Cpf CPF = Cpf.of("51914372093");
     private static final String PASSWORD = "senha-segura";

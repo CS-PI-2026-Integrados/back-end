@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
@@ -23,6 +24,8 @@ import br.com.sicape.api.domain.entity.Convicted;
 import br.com.sicape.api.domain.entity.JudicialDistrict;
 import br.com.sicape.api.domain.entity.JudicialProcess;
 import br.com.sicape.api.domain.enums.ProcessStatus;
+import br.com.sicape.api.domain.enums.ConvictedStatus;
+import br.com.sicape.api.domain.exception.ConflictException;
 import br.com.sicape.api.domain.exception.ValidationException;
 import br.com.sicape.api.domain.repository.ConvictedRepository;
 import br.com.sicape.api.domain.repository.JudicialProcessRepository;
@@ -65,7 +68,7 @@ class UpdateConvictedUseCaseTest {
         );
         inactiveProcess.setUuid(processId);
 
-        when(finder.find(convictedId, auth)).thenReturn(convicted);
+        when(finder.findForUpdate(convictedId, auth)).thenReturn(convicted);
         when(processRepository.findAllByUuidInAndDistrict(any(), any()))
             .thenReturn(List.of(inactiveProcess));
 
@@ -83,5 +86,21 @@ class UpdateConvictedUseCaseTest {
 
         verify(repository, never()).save(any());
         verify(repository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void rejectsInactiveConvictedEvenWithEmptyRequest() {
+        var convicted = new Convicted("Apenado", Cpf.of("52998224725"), LocalDate.of(1990, 1, 1),
+            Phone.of("11912345678"), new Address("12345678", "Rua", "10", null, "Centro", "Cidade", "SP"),
+            null, district);
+        convicted.updateStatus(ConvictedStatus.INACTIVE, null);
+        UUID id = UUID.randomUUID();
+        when(finder.findForUpdate(id, auth)).thenReturn(convicted);
+
+        assertThatThrownBy(() -> useCase.execute(id, new UpdateConvictedRequest(), auth))
+            .isInstanceOf(ConflictException.class).hasMessageContaining("Reative");
+        verify(repository, never()).save(any());
+        verify(repository, never()).saveAndFlush(any());
+        verifyNoInteractions(processRepository);
     }
 }

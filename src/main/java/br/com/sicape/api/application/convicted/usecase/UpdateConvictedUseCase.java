@@ -38,7 +38,8 @@ public class UpdateConvictedUseCase {
 
     @Transactional
     public ConvictedResponse execute(UUID uuid, UpdateConvictedRequest request, AuthContext authContext) {
-        Convicted convicted = finder.find(uuid, authContext);
+        Convicted convicted = finder.findForUpdate(uuid, authContext);
+        convicted.ensureActive();
 
         if (request.isNameProvided()) {
             String name = request.getName();

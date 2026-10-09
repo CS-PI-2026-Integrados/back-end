@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import br.com.sicape.api.application.oauth.AuthContext;
 import br.com.sicape.api.application.user.dto.request.CreateUserRequest;
@@ -45,6 +46,9 @@ import br.com.sicape.api.domain.valueobject.Cpf;
 })
 @ActiveProfiles("development")
 class UserIntegrationTest {
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Autowired
     private CreateUserUseCase createUserUseCase;
@@ -345,6 +349,74 @@ void shouldUpdateUserSuccessfullyWithPassword()
         
         User saved = userRepository.findByEmail("operator@sicape.local").orElseThrow();
         assertThat(saved.isActive()).isFalse();
+    }
+
+    @Test
+    void shouldReactivateUserWithoutChangingPassword() {
+        AuthContext context = new AuthContext(adminUser, district, null);
+        deleteUserUseCase.execute(operatorUser.getUuid(), context);
+        String previousHash = userRepository.findByUuid(operatorUser.getUuid()).orElseThrow().getPasswordHash();
+        UpdateUserRequest request = new UpdateUserRequest(
+            operatorUser.getName(), operatorUser.getEmail(), null, UserRole.OPERATOR, true
+        );
+
+        UserResponse response = updateUserUseCase.execute(operatorUser.getUuid(), request, context);
+
+        assertThat(response.isActive()).isTrue();
+        User saved = userRepository.findByUuid(operatorUser.getUuid()).orElseThrow();
+        assertThat(saved.isActive()).isTrue();
+        assertThat(saved.getPasswordHash()).isEqualTo(previousHash);
+    }
+
+    @Test
+    void shouldPreserveInactiveStatusWhenUpdateOmitsActiveState() {
+        AuthContext context = new AuthContext(adminUser, district, null);
+        deleteUserUseCase.execute(operatorUser.getUuid(), context);
+        UpdateUserRequest request = new UpdateUserRequest(
+            "Nome atualizado", operatorUser.getEmail(), "NovaSenha123", UserRole.OPERATOR
+        );
+
+        UserResponse response = updateUserUseCase.execute(operatorUser.getUuid(), request, context);
+
+        assertThat(response.isActive()).isFalse();
+        assertThat(passwordEncoder.matches("NovaSenha123",
+            userRepository.findByUuid(operatorUser.getUuid()).orElseThrow().getPasswordHash())).isTrue();
+    }
+
+    @Test
+    void shouldRejectOwnDeactivationThroughUpdate() {
+        UpdateUserRequest request = new UpdateUserRequest(
+            adminUser.getName(), adminUser.getEmail(), null, UserRole.ADMIN, false
+        );
+
+        assertThatThrownBy(() -> updateUserUseCase.execute(adminUser.getUuid(), request,
+            new AuthContext(adminUser, district, null)))
+            .isInstanceOf(ForbiddenException.class)
+            .hasMessageContaining("Você não pode desativar seu próprio usuário");
+        assertThat(userRepository.findByUuid(adminUser.getUuid()).orElseThrow().isActive()).isTrue();
+    }
+
+    @Test
+    void shouldRejectReactivationWhenNotAdmin() {
+        deleteUserUseCase.execute(operatorUser.getUuid(), new AuthContext(adminUser, district, null));
+        UpdateUserRequest request = new UpdateUserRequest(
+            operatorUser.getName(), operatorUser.getEmail(), null, UserRole.OPERATOR, true
+        );
+
+        assertThatThrownBy(() -> updateUserUseCase.execute(operatorUser.getUuid(), request,
+            new AuthContext(operatorUser, district, null)))
+            .isInstanceOf(ForbiddenException.class);
+        assertThat(userRepository.findByUuid(operatorUser.getUuid()).orElseThrow().isActive()).isFalse();
+    }
+
+    @Test
+    void shouldDeserializeOptionalActiveStateFromFrontendContract() throws Exception {
+        UpdateUserRequest request = objectMapper.readValue("""
+            {"name":"Operador","email":"operator@sicape.local","role":"operator","is_active":true}
+            """, UpdateUserRequest.class);
+
+        assertThat(request.isActive()).isTrue();
+        assertThat(request.password()).isNull();
     }
 
     @Test

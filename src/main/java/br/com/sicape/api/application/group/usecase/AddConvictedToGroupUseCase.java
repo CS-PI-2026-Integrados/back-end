@@ -25,7 +25,7 @@ public class AddConvictedToGroupUseCase {
     public void execute(UUID groupUuid, UUID convictedUuid, AuthContext authContext) {
         Group group = groupFinder.find(groupUuid, authContext);
         validatePlanned(group);
-        group.addConvicted(convictedFinder.find(convictedUuid, authContext));
+        group.addConvicted(convictedFinder.findActive(convictedUuid, authContext));
         groupRepository.save(group);
     }
 

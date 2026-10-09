@@ -12,12 +12,18 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import br.com.sicape.api.application.attendance.dto.AttendanceResponse;
+import br.com.sicape.api.application.attendance.dto.AttendanceMetricsResponse;
+import br.com.sicape.api.application.attendance.usecase.GetAttendanceMetricsUseCase;
+import br.com.sicape.api.application.attendance.dto.AttendanceYearsResponse;
+import br.com.sicape.api.application.attendance.dto.AttendanceMonthsResponse;
 import br.com.sicape.api.application.attendance.dto.CreateAttendanceRequest;
 import br.com.sicape.api.application.attendance.usecase.CreateAttendanceUseCase;
 import br.com.sicape.api.application.attendance.usecase.GetAttendancePhotoUseCase;
 import br.com.sicape.api.application.attendance.usecase.GetAttendanceReceiptUseCase;
 import br.com.sicape.api.application.attendance.usecase.GetAttendanceUseCase;
 import br.com.sicape.api.application.attendance.usecase.ListAttendanceUseCase;
+import br.com.sicape.api.application.attendance.usecase.ListAttendanceYearsUseCase;
+import br.com.sicape.api.application.attendance.usecase.ListAttendanceMonthsUseCase;
 import br.com.sicape.api.application.common.dto.response.PageResponse;
 import br.com.sicape.api.application.oauth.AuthContext;
 import br.com.sicape.api.domain.exception.ValidationException;
@@ -34,16 +40,39 @@ public class AttendanceController {
     private final GetAttendancePhotoUseCase getPhoto;
     private final GetAttendanceReceiptUseCase getReceipt;
     private final ListAttendanceUseCase listUseCase;
+    private final ListAttendanceYearsUseCase listYearsUseCase;
+    private final ListAttendanceMonthsUseCase listMonthsUseCase;
     private final GetAttendanceUseCase getUseCase;
+    private final GetAttendanceMetricsUseCase metricsUseCase;
+
+    @GetMapping("/metrics")
+    public AttendanceMetricsResponse metrics(@AuthenticationPrincipal AuthContext auth) {
+        return metricsUseCase.execute(auth);
+    }
 
     @GetMapping
     public PageResponse<AttendanceResponse> list(
         @RequestParam(required = false) String search,
+        @RequestParam(required = false) @Min(1) @Max(9998) Integer year,
+        @RequestParam(required = false) @Min(1) @Max(12) Integer month,
         @RequestParam(defaultValue = "0") @Min(0) int page,
         @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
         @AuthenticationPrincipal AuthContext authContext
     ) {
-        return listUseCase.execute(search, page, size, authContext);
+        return listUseCase.execute(search, year, month, page, size, authContext);
+    }
+
+    @GetMapping("/years")
+    public AttendanceYearsResponse years(@AuthenticationPrincipal AuthContext auth) {
+        return listYearsUseCase.execute(auth);
+    }
+
+    @GetMapping("/months")
+    public AttendanceMonthsResponse months(
+        @RequestParam @Min(1) @Max(9998) int year,
+        @AuthenticationPrincipal AuthContext auth
+    ) {
+        return listMonthsUseCase.execute(year, auth);
     }
 
     @GetMapping("/{uuid}")

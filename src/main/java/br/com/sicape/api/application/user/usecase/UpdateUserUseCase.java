@@ -39,6 +39,10 @@ public class UpdateUserUseCase {
             throw new ForbiddenException("Você não pode alterar seu próprio nível de acesso.");
         }
 
+        if (authContext.user().getUuid().equals(targetUser.getUuid()) && Boolean.FALSE.equals(request.isActive())) {
+            throw new ForbiddenException("Você não pode desativar seu próprio usuário.");
+        }
+
         String normalizedEmail = request.email().trim().toLowerCase();
         if (userRepository.existsByEmailAndUuidNot(normalizedEmail, targetUser.getUuid())) {
             throw new ConflictException("email", "Já existe um usuário cadastrado com este e-mail.");
@@ -47,6 +51,10 @@ public class UpdateUserUseCase {
         targetUser.setName(request.name().trim());
         targetUser.setEmail(normalizedEmail);
         targetUser.setRole(request.role());
+
+        if (request.isActive() != null) {
+            targetUser.setActive(request.isActive());
+        }
 
         if (request.password() != null && !request.password().isBlank()) {
             targetUser.setPasswordHash(passwordEncoder.encode(request.password()));
