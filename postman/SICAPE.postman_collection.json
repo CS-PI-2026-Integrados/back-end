@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "SICAPE - API completa",
-    "description": "Template baseado nos controllers, DTOs e validações do checkout atual do SICAPE. Postman Collection v2.1. Contém todas as 26 combinações de método/caminho (incluindo /users e /usuarios), com 33 requisições e variantes.\n\nImporte a coleção e, opcionalmente, o ambiente Development. Execute Login — Administrador antes das rotas protegidas. Credenciais e UUIDs iniciais correspondem aos seeders do perfil development. Em outro ambiente, ajuste as variáveis. Login e refresh capturam tokens; cadastros capturam IDs.\n\nAs duas pastas de usuários são aliases: escolha um caminho para cada operação. Este catálogo contém operações e exemplos alternativos; execute as requisições desejadas individualmente. Cadastros repetidos podem retornar 409, e exclusões desativam registros. Selecione arquivos nos campos photo antes dos uploads.\n\nJSON usa snake_case; filtros de presença na URL usam camelCase. /status também requer Bearer. As pastas de usuários usam admin_access_token; as demais herdam access_token. Mantenha tokens e IDs capturados nas variáveis da coleção para evitar sobreposição pelo ambiente. Os scripts validam status HTTP e MIME de arquivos. Respostas reais devem ser verificadas com a API em execução.",
+    "description": "Template baseado nos controllers, DTOs e validações do checkout atual do SICAPE. Postman Collection v2.1. Contém todas as 33 combinações de método/caminho (incluindo /users e /usuarios), com 40 requisições e variantes.\n\nImporte a coleção e, opcionalmente, o ambiente Development. Execute Login — Administrador antes das rotas protegidas. Credenciais e UUIDs iniciais correspondem aos seeders do perfil development. Em outro ambiente, ajuste as variáveis. Login e refresh capturam tokens; cadastros capturam IDs.\n\nAs duas pastas de usuários são aliases: escolha um caminho para cada operação. Este catálogo contém operações e exemplos alternativos; execute as requisições desejadas individualmente. Cadastros repetidos podem retornar 409, e exclusões desativam registros. Selecione arquivos nos campos photo antes dos uploads.\n\nJSON usa snake_case; parâmetros de consulta seguem os controllers. Grupos usam /group e retornam uuid; cadastros e consultas salvam group_uuid. Participantes só podem ser alterados em grupos PLANNED. /status também requer Bearer. As pastas de usuários usam admin_access_token; as demais herdam access_token. Mantenha tokens e IDs capturados nas variáveis da coleção para evitar sobreposição pelo ambiente. Os scripts validam status HTTP e MIME de arquivos. Respostas reais devem ser verificadas com a API em execução.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -176,6 +176,30 @@
       "value": "20",
       "type": "string",
       "description": "Tamanho de página de todas as listagens: 1 a 100; padrão 20."
+    },
+    {
+      "key": "group_uuid",
+      "value": "",
+      "type": "string",
+      "description": "UUID retornado ao criar/consultar/atualizar grupo. Para consultar um grupo do seeder development, use 00000000-0000-0000-0000-000000000190."
+    },
+    {
+      "key": "group_name",
+      "value": "Grupo Postman",
+      "type": "string",
+      "description": "Filtro opcional por nome do grupo."
+    },
+    {
+      "key": "group_subject",
+      "value": "Responsabilização",
+      "type": "string",
+      "description": "Filtro opcional por tema do grupo."
+    },
+    {
+      "key": "group_status",
+      "value": "PLANNED",
+      "type": "string",
+      "description": "Filtro opcional: PLANNED, ACTIVE ou CLOSED."
     }
   ],
   "item": [
@@ -1824,7 +1848,360 @@
       ]
     },
     {
-      "name": "7. Status",
+      "name": "7. Grupos reflexivos",
+      "description": "Operações em /group com Bearer da sessão atual, limitadas à comarca autenticada. ADMIN e OPERATOR podem cadastrar, editar e remover grupos. Crie um grupo para preencher group_uuid e use convicted_uuid para gerenciar participantes enquanto o grupo estiver PLANNED. Execute as requisições desejadas individualmente; a exclusão é lógica e deve ser feita por último.",
+      "item": [
+        {
+          "name": "Criar grupo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/group",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "group"
+              ]
+            },
+            "description": "Cria um grupo na comarca autenticada com status inicial PLANNED e salva group_uuid. name, description, subject, presenters, total_meetings_count, minimum_meetings_count, meeting_base_time, frequency e start_date são obrigatórios. presenters deve conter ao menos um nome não vazio. Quantidades devem ser positivas e o mínimo não pode exceder o total. frequency: WEEKLY, BIWEEKLY ou MONTHLY; horário HH:mm; datas yyyy-MM-dd. predicted_end_date é opcional e não pode anteceder start_date. convicted_uuids é opcional: informe UUIDs distintos de apenados da mesma comarca ou deixe a lista vazia para incluí-los depois.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Grupo Postman\",\n  \"description\": \"Encontros de reflexão sobre responsabilização e convivência.\",\n  \"subject\": \"Responsabilização\",\n  \"presenters\": [\n    \"Ana Beatriz\",\n    \"Carlos Eduardo\"\n  ],\n  \"total_meetings_count\": 8,\n  \"minimum_meetings_count\": 6,\n  \"meeting_base_time\": \"14:00\",\n  \"frequency\": \"WEEKLY\",\n  \"start_date\": \"2026-11-04\",\n  \"predicted_end_date\": \"2026-12-23\",\n  \"convicted_uuids\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP esperado: 201', function () { pm.response.to.have.status(201); });",
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const data = pm.response.json();",
+                  "    pm.test('UUID do grupo retornado', function () {",
+                  "        pm.expect(data.uuid).to.be.a('string').and.not.empty;",
+                  "    });",
+                  "    if (data.uuid) pm.collectionVariables.set('group_uuid', data.uuid);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Listar e filtrar grupos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/group?page={{page}}&size={{page_size}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "group"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "{{page}}",
+                  "description": "Página inicial 0; valor não negativo."
+                },
+                {
+                  "key": "size",
+                  "value": "{{page_size}}",
+                  "description": "Quantidade por página: 1 a 100; padrão 20."
+                },
+                {
+                  "key": "name",
+                  "value": "{{group_name}}",
+                  "description": "Filtro opcional por nome.",
+                  "disabled": true
+                },
+                {
+                  "key": "subject",
+                  "value": "{{group_subject}}",
+                  "description": "Filtro opcional por tema.",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "{{group_status}}",
+                  "description": "PLANNED, ACTIVE ou CLOSED.",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Lista grupos não excluídos da comarca autenticada, ordenados por nome crescente. Ative os filtros opcionais name, subject e status; eles podem ser combinados. status: PLANNED, ACTIVE ou CLOSED. Retorna content, page, size, total_elements e total_pages; cada grupo inclui uuid, name, subject, presenters, status e participant_count. Paginação padrão: page=0, size=20; size de 1 a 100."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP esperado: 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "    const data = pm.response.json();",
+                  "    pm.test('Listagem paginada de grupos', function () {",
+                  "        pm.expect(data.content).to.be.an('array');",
+                  "        pm.expect(data.page).to.be.a('number');",
+                  "        pm.expect(data.size).to.be.a('number');",
+                  "        pm.expect(data.total_elements).to.be.a('number');",
+                  "        pm.expect(data.total_pages).to.be.a('number');",
+                  "        data.content.forEach(function (group) {",
+                  "            pm.expect(group.uuid).to.be.a('string').and.not.empty;",
+                  "            pm.expect(group.participant_count).to.be.a('number');",
+                  "        });",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Consultar grupo",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/group/{{group_uuid}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "group",
+                "{{group_uuid}}"
+              ]
+            },
+            "description": "Consulta os detalhes do grupo na comarca autenticada e salva group_uuid. Inclui os participantes em convicteds, com id, name e document. Grupos inexistentes, excluídos ou de outra comarca retornam 404."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP esperado: 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const data = pm.response.json();",
+                  "    pm.test('UUID do grupo retornado', function () {",
+                  "        pm.expect(data.uuid).to.be.a('string').and.not.empty;",
+                  "    });",
+                  "    if (data.uuid) pm.collectionVariables.set('group_uuid', data.uuid);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Atualizar grupo",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/group/{{group_uuid}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "group",
+                "{{group_uuid}}"
+              ]
+            },
+            "description": "Atualização parcial: envie ao menos um dos campos name, subject, presenters, predicted_end_date, status ou start_date. Campos omitidos são preservados; campos não suportados retornam 422. name e subject não podem ser vazios; presenters deve conter ao menos um nome não vazio. status: PLANNED, ACTIVE ou CLOSED, sem aceitar null. start_date só pode mudar enquanto o status atual for PLANNED. predicted_end_date aceita null para limpar e, quando informada, não pode anteceder a data de início efetiva. O exemplo mantém PLANNED para permitir gerenciar participantes depois. Salva group_uuid.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Grupo Postman atualizado\",\n  \"subject\": \"Responsabilização e convivência\",\n  \"presenters\": [\n    \"Ana Beatriz\",\n    \"Carlos Eduardo\"\n  ],\n  \"predicted_end_date\": \"2026-12-23\",\n  \"status\": \"PLANNED\",\n  \"start_date\": \"2026-11-04\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP esperado: 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const data = pm.response.json();",
+                  "    pm.test('UUID do grupo retornado', function () {",
+                  "        pm.expect(data.uuid).to.be.a('string').and.not.empty;",
+                  "    });",
+                  "    if (data.uuid) pm.collectionVariables.set('group_uuid', data.uuid);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Adicionar apenado ao grupo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/group/{{group_uuid}}/convicted/{{convicted_uuid}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "group",
+                "{{group_uuid}}",
+                "convicted",
+                "{{convicted_uuid}}"
+              ]
+            },
+            "description": "Vincula convicted_uuid ao grupo da mesma comarca, somente quando o grupo estiver PLANNED. Não envia corpo. Retorna 201 sem corpo; consulte o grupo para verificar convicteds. Vínculo duplicado retorna 409; grupo fora de PLANNED retorna 422."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP esperado: 201', function () { pm.response.to.have.status(201); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Remover apenado do grupo",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/group/{{group_uuid}}/convicted/{{convicted_uuid}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "group",
+                "{{group_uuid}}",
+                "convicted",
+                "{{convicted_uuid}}"
+              ]
+            },
+            "description": "Remove o vínculo do apenado com o grupo da mesma comarca, somente quando o grupo estiver PLANNED. Retorna 204 sem corpo. Grupo fora de PLANNED retorna 422. Consulte o grupo para conferir os participantes restantes."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP esperado: 204', function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Excluir grupo",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/group/{{group_uuid}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "group",
+                "{{group_uuid}}"
+              ]
+            },
+            "description": "Requer ADMIN ou OPERATOR. Exclusão lógica do grupo da comarca autenticada; retorna 204 sem corpo. O grupo deixa de aparecer nas listagens e consultas posteriores retornam 404. Execute por último e selecione o group_uuid desejado antes de enviar."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP esperado: 204', function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "8. Status",
       "description": "Rota protegida conforme SecurityConfiguration.",
       "item": [
         {
@@ -1865,7 +2242,7 @@
       ]
     },
     {
-      "name": "8. Desativação de apenados",
+      "name": "9. Desativação de apenados",
       "description": "Execute quando desejar desativar um apenado sem processos ativos.",
       "item": [
         {
