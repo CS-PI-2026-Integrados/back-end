@@ -3,6 +3,9 @@ package br.com.sicape.api.infrastructure.receipt;
 import java.io.ByteArrayOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.awt.Color;
+import java.awt.RenderingHints;
+import java.awt.image.BufferedImage;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -112,18 +115,36 @@ public class ReceiptPdfRendererImpl implements ReceiptPdfRenderer {
             throw new IllegalStateException("A foto necessária ao comprovante é inválida.");
         }
         try {
-            if (ImageIO.read(new ByteArrayInputStream(photo.bytes())) == null) {
+            var image = ImageIO.read(new ByteArrayInputStream(photo.bytes()));
+            if (image == null) {
                 log.error("Imagem não decodificável para comprovante; attendanceUuid={}, kind={}",
                     attendanceUuid, kind);
                 throw new IllegalStateException("A foto necessária ao comprovante é inválida.");
             }
+            // Both photos occupy the same square without cropping or stretching their content.
+            int size = 300;
+            var framed = new BufferedImage(size, size, BufferedImage.TYPE_INT_RGB);
+            var graphics = framed.createGraphics();
+            try {
+                graphics.setColor(Color.WHITE);
+                graphics.fillRect(0, 0, size, size);
+                graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+                    RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+                double scale = Math.min((double) size / image.getWidth(), (double) size / image.getHeight());
+                int width = Math.max(1, (int) Math.round(image.getWidth() * scale));
+                int height = Math.max(1, (int) Math.round(image.getHeight() * scale));
+                graphics.drawImage(image, (size - width) / 2, (size - height) / 2, width, height, null);
+            } finally {
+                graphics.dispose();
+            }
+            var output = new ByteArrayOutputStream();
+            ImageIO.write(framed, "png", output);
+            return "data:image/png;base64," + Base64.getEncoder().encodeToString(output.toByteArray());
         } catch (IOException failure) {
             log.error("Falha ao ler imagem do comprovante; attendanceUuid={}, kind={}",
                 attendanceUuid, kind, failure);
             throw new IllegalStateException("A foto necessária ao comprovante é inválida.", failure);
         }
-        return "data:" + photo.contentType() + ";base64,"
-            + Base64.getEncoder().encodeToString(photo.bytes());
     }
 
     private static String escape(String value) {
