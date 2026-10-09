@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.time.Instant;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,6 +20,26 @@ import br.com.sicape.api.domain.enums.ConvictedStatus;
 import br.com.sicape.api.domain.valueobject.Cpf;
 
 public interface ConvictedRepository extends BaseRepository<Convicted> {
+    long countByDistrict(JudicialDistrict district);
+
+    long countByDistrictAndStatus(JudicialDistrict district, ConvictedStatus status);
+
+    @Query("""
+        select count(c) from Convicted c
+        where c.district = :district and c.status = :status
+          and exists (
+            select a.id from Attendance a
+            where a.convicted = c and a.district = :district
+              and a.createdAt >= :start and a.createdAt < :end
+          )
+        """)
+    long countWithRecentAttendance(
+        @Param("district") JudicialDistrict district,
+        @Param("status") ConvictedStatus status,
+        @Param("start") Instant start,
+        @Param("end") Instant end
+    );
+
     @EntityGraph(attributePaths = {"photo", "processes", "processes.process"})
     Optional<Convicted> findByUuidAndDistrict(UUID uuid, JudicialDistrict district);
 

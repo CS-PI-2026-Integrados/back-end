@@ -19,6 +19,11 @@ import org.springframework.context.annotation.Import;
 import br.com.sicape.api.application.attendance.dto.AttendanceResponse;
 import br.com.sicape.api.application.attendance.usecase.GetAttendanceUseCase;
 import br.com.sicape.api.application.attendance.usecase.ListAttendanceUseCase;
+import br.com.sicape.api.application.attendance.usecase.ListAttendanceYearsUseCase;
+import br.com.sicape.api.application.attendance.usecase.ListAttendanceMonthsUseCase;
+import br.com.sicape.api.domain.exception.ValidationException;
+import java.time.Year;
+import java.time.ZoneId;
 import br.com.sicape.api.application.oauth.AuthContext;
 import br.com.sicape.api.domain.entity.Attendance;
 import br.com.sicape.api.domain.entity.Convicted;
@@ -43,11 +48,13 @@ import br.com.sicape.api.domain.valueobject.Phone;
     "spring.jpa.hibernate.ddl-auto=create-drop"
 })
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import({ListAttendanceUseCase.class, GetAttendanceUseCase.class})
+@Import({ListAttendanceUseCase.class, GetAttendanceUseCase.class, ListAttendanceYearsUseCase.class, ListAttendanceMonthsUseCase.class})
 class AttendanceQueryIntegrationTest {
     @Autowired private TestEntityManager entityManager;
     @Autowired private ListAttendanceUseCase listUseCase;
     @Autowired private GetAttendanceUseCase getUseCase;
+    @Autowired private ListAttendanceYearsUseCase listYearsUseCase;
+    @Autowired private ListAttendanceMonthsUseCase listMonthsUseCase;
 
     private final Address address = new Address("12345678", "Rua Central", "10", null, "Centro", "Cidade", "SP");
     private final Phone phone = Phone.of("11988881001");
@@ -116,6 +123,7 @@ class AttendanceQueryIntegrationTest {
         assertThat(response.convictedId()).isEqualTo(matching.getConvicted().getUuid());
         assertThat(response.processId()).isEqualTo(matching.getProcess().getUuid());
         assertThat(response.userId()).isEqualTo(auth.user().getUuid());
+        assertThat(response.userName()).isEqualTo(auth.user().getName());
         assertThat(response.address().street()).isEqualTo("Rua Central");
         assertThat(response.phone()).isEqualTo(phone.value());
         assertThat(response.employmentStatus()).isEqualTo(EmploymentStatus.FORMAL_WORK);
@@ -124,6 +132,103 @@ class AttendanceQueryIntegrationTest {
             .isInstanceOf(ResourceNotFoundException.class);
         assertThatThrownBy(() -> getUseCase.execute(UUID.randomUUID(), auth))
             .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void returnsTheAttendanceAuthorEvenWhenAnotherOperatorReadsIt() {
+        var author = entityManager.persistAndFlush(new User("Responsável pelo atendimento", Cpf.of("39053344705"),
+            "responsavel@test.local", "hash", UserRole.OPERATOR, auth.district()));
+        var record = createAttendance(
+            entityManager.find(Convicted.class, matching.getConvicted().getId()),
+            entityManager.find(JudicialProcess.class, matching.getProcess().getId()),
+            new AuthContext(author, auth.district(), null), "2026-10-02T12:00:00Z");
+        entityManager.clear();
+
+        var listed = listUseCase.execute(null, 0, 1, auth).content().getFirst();
+        var detail = getUseCase.execute(record.getUuid(), auth);
+
+        assertThat(listed.userId()).isEqualTo(author.getUuid());
+        assertThat(listed.userName()).isEqualTo("Responsável pelo atendimento");
+        assertThat(detail.userId()).isEqualTo(author.getUuid());
+        assertThat(detail.userName()).isEqualTo(listed.userName());
+        assertThat(detail.userId()).isNotEqualTo(auth.user().getUuid());
+    }
+
+    @Test
+    void filtersPeriodBeforePaginationAndCombinesSearchWithinDistrict() {
+        var result = listUseCase.execute("Arthur", 2026, 9, 0, 1, auth);
+        assertThat(result.totalElements()).isEqualTo(2);
+        assertThat(result.totalPages()).isEqualTo(2);
+        assertThat(result.content()).extracting(AttendanceResponse::id).containsExactly(latest.getUuid());
+        assertThat(listUseCase.execute(null, 2026, 10, 0, 20, auth).content()).isEmpty();
+        assertThat(listUseCase.execute(null, 2026, null, 0, 20, auth).totalElements()).isEqualTo(3);
+        assertThat(listUseCase.execute(null, 2025, null, 0, 20, auth).content()).isEmpty();
+    }
+
+    @Test
+    void usesSaoPauloMonthAndYearBoundariesWithExclusiveEnd() {
+        var convicted = entityManager.find(Convicted.class, matching.getConvicted().getId());
+        var process = entityManager.find(JudicialProcess.class, matching.getProcess().getId());
+        var before = createAttendance(convicted, process, auth, "2026-01-01T02:59:59Z");
+        var start = createAttendance(convicted, process, auth, "2026-01-01T03:00:00Z");
+        var end = createAttendance(convicted, process, auth, "2026-02-01T03:00:00Z");
+        var nextYear = createAttendance(convicted, process, auth, "2027-01-01T03:00:00Z");
+        entityManager.clear();
+        assertThat(listUseCase.execute(null, 2025, 12, 0, 20, auth).content())
+            .extracting(AttendanceResponse::id).containsExactly(before.getUuid());
+        assertThat(listUseCase.execute(null, 2026, 1, 0, 20, auth).content())
+            .extracting(AttendanceResponse::id).containsExactly(start.getUuid());
+        assertThat(listUseCase.execute(null, 2026, null, 0, 20, auth).content())
+            .extracting(AttendanceResponse::id).contains(start.getUuid(), end.getUuid())
+            .doesNotContain(before.getUuid(), nextYear.getUuid());
+    }
+
+    @Test
+    void rejectsInvalidPeriods() {
+        for (Integer month : new Integer[]{0, 13}) {
+            assertThatThrownBy(() -> listUseCase.execute(null, 2026, month, 0, 20, auth))
+                .isInstanceOf(ValidationException.class);
+        }
+        assertThatThrownBy(() -> listUseCase.execute(null, null, 1, 0, 20, auth))
+            .isInstanceOf(ValidationException.class);
+        assertThatThrownBy(() -> listUseCase.execute(null, 0, null, 0, 20, auth))
+            .isInstanceOf(ValidationException.class);
+        assertThatThrownBy(() -> listUseCase.execute(null, 9999, null, 0, 20, auth))
+            .isInstanceOf(ValidationException.class);
+    }
+
+    @Test
+    void countsAllDocumentsPerLocalMonthWithoutOtherDistricts() {
+        assertThat(listMonthsUseCase.execute(2026, auth).counts())
+            .containsExactly(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 3L, 0L, 0L, 0L);
+        var convicted = entityManager.find(Convicted.class, matching.getConvicted().getId());
+        var process = entityManager.find(JudicialProcess.class, matching.getProcess().getId());
+        createAttendance(convicted, process, auth, "2026-02-01T02:59:59Z");
+        createAttendance(convicted, process, auth, "2026-02-01T03:00:00Z");
+        entityManager.clear();
+        var counts = listMonthsUseCase.execute(2026, auth).counts();
+        assertThat(counts.get(0)).isEqualTo(1L);
+        assertThat(counts.get(1)).isEqualTo(1L);
+        assertThat(counts.stream().mapToLong(Long::longValue).sum())
+            .isEqualTo(listUseCase.execute(null, 2026, null, 0, 1, auth).totalElements());
+        assertThat(listMonthsUseCase.execute(2025, auth).counts()).containsOnly(0L);
+        assertThatThrownBy(() -> listMonthsUseCase.execute(0, auth)).isInstanceOf(ValidationException.class);
+    }
+
+    @Test
+    void yearsIncludeCurrentAndGapsButExcludeOtherDistricts() {
+        var convicted = entityManager.find(Convicted.class, matching.getConvicted().getId());
+        var process = entityManager.find(JudicialProcess.class, matching.getProcess().getId());
+        createAttendance(convicted, process, auth, "2024-01-01T02:59:59Z");
+        createAttendance(entityManager.find(Convicted.class, foreign.getConvicted().getId()),
+            entityManager.find(JudicialProcess.class, foreign.getProcess().getId()), otherAuth, "2020-01-01T12:00:00Z");
+        entityManager.clear();
+        int current = Year.now(ZoneId.of("America/Sao_Paulo")).getValue();
+        var years = listYearsUseCase.execute(auth).years();
+        assertThat(years).contains(2023, 2024, 2025, 2026, current).doesNotContain(2020);
+        assertThat(years).isSortedAccordingTo(java.util.Comparator.reverseOrder());
+        var emptyAuth = createAuth("Comarca vazia", "39053344705");
+        assertThat(listYearsUseCase.execute(emptyAuth).years()).containsExactly(current);
     }
 
     private AuthContext createAuth(String name, String cpf) {

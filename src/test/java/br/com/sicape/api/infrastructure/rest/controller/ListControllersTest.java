@@ -20,6 +20,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -41,10 +42,18 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import br.com.sicape.api.application.attendance.usecase.CreateAttendanceUseCase;
+import br.com.sicape.api.application.attendance.usecase.GetAttendanceMetricsUseCase;
+import br.com.sicape.api.application.attendance.dto.AttendanceMetricsResponse;
+import br.com.sicape.api.application.convicted.usecase.GetConvictedMetricsUseCase;
+import br.com.sicape.api.application.convicted.dto.response.ConvictedMetricsResponse;
 import br.com.sicape.api.application.attendance.usecase.GetAttendancePhotoUseCase;
 import br.com.sicape.api.application.attendance.usecase.GetAttendanceReceiptUseCase;
 import br.com.sicape.api.application.attendance.usecase.GetAttendanceUseCase;
 import br.com.sicape.api.application.attendance.usecase.ListAttendanceUseCase;
+import br.com.sicape.api.application.attendance.usecase.ListAttendanceYearsUseCase;
+import br.com.sicape.api.application.attendance.usecase.ListAttendanceMonthsUseCase;
+import br.com.sicape.api.application.attendance.dto.AttendanceYearsResponse;
+import br.com.sicape.api.application.attendance.dto.AttendanceMonthsResponse;
 import br.com.sicape.api.application.common.dto.response.PageResponse;
 import br.com.sicape.api.application.convicted.usecase.CreateConvictedUseCase;
 import br.com.sicape.api.application.convicted.usecase.GetConvictedPhotoUseCase;
@@ -81,6 +90,8 @@ class ListControllersTest {
 
     @Autowired private MockMvc mvc;
     @MockitoBean private ListAttendanceUseCase listAttendance;
+    @MockitoBean private ListAttendanceYearsUseCase listAttendanceYears;
+    @MockitoBean private ListAttendanceMonthsUseCase listAttendanceMonths;
     @MockitoBean private ListConvictedUseCase listConvicted;
     @MockitoBean private ListProcessUseCase listProcess;
     @MockitoBean private ListUsersUseCase listUsers;
@@ -89,11 +100,42 @@ class ListControllersTest {
     @MockitoBean private CreateUserUseCase createUser;
     @MockitoBean private UpdateUserUseCase updateUser;
     @MockitoBean private UpdateConvictedStatusUseCase updateConvictedStatus;
+    @MockitoBean private GetConvictedMetricsUseCase convictedMetrics;
+    @MockitoBean private GetAttendanceMetricsUseCase attendanceMetrics;
+
+    @Test
+    void returnsMetricsContractsWithoutMatchingUuidRoutes() throws Exception {
+        var now = Instant.parse("2026-10-09T12:00:00Z");
+        when(convictedMetrics.execute(null)).thenReturn(new ConvictedMetricsResponse(6, 5, 1, 2, 3, now));
+        UUID id = UUID.randomUUID();
+        UUID convictedId = UUID.randomUUID();
+        when(attendanceMetrics.execute(null)).thenReturn(new AttendanceMetricsResponse(5,
+            List.of(new AttendanceMetricsResponse.MonthlyCount("2026-10", 5)),
+            List.of(new AttendanceMetricsResponse.RecentActivity(id, convictedId, "Pessoa", now.minusSeconds(1))), now));
+        mvc.perform(get("/convicted/metrics")).andExpect(status().isOk())
+            .andExpect(jsonPath("$.total").value(6))
+            .andExpect(jsonPath("$.active").value(5))
+            .andExpect(jsonPath("$.inactive").value(1))
+            .andExpect(jsonPath("$.with_recent_attendance").value(2))
+            .andExpect(jsonPath("$.without_recent_attendance").value(3))
+            .andExpect(jsonPath("$.calculated_at").value(now.toString()));
+        mvc.perform(get("/attendance/metrics")).andExpect(status().isOk())
+            .andExpect(jsonPath("$.last_7_days").value(5))
+            .andExpect(jsonPath("$.monthly_counts[0].month").value("2026-10"))
+            .andExpect(jsonPath("$.monthly_counts[0].count").value(5))
+            .andExpect(jsonPath("$.recent_activities[0].id").value(id.toString()))
+            .andExpect(jsonPath("$.recent_activities[0].convicted_id").value(convictedId.toString()))
+            .andExpect(jsonPath("$.recent_activities[0].convicted_name").value("Pessoa"))
+            .andExpect(jsonPath("$.recent_activities[0].created_at").value(now.minusSeconds(1).toString()))
+            .andExpect(jsonPath("$.calculated_at").value(now.toString()));
+        verify(convictedMetrics).execute(null);
+        verify(attendanceMetrics).execute(null);
+    }
 
     @BeforeEach
     void stubLists() {
-        when(listAttendance.execute(nullable(String.class), anyInt(), anyInt(), any()))
-            .thenAnswer(invocation -> emptyPage(invocation.getArgument(1), invocation.getArgument(2)));
+        when(listAttendance.execute(nullable(String.class), nullable(Integer.class), nullable(Integer.class), anyInt(), anyInt(), any()))
+            .thenAnswer(invocation -> emptyPage(invocation.getArgument(3), invocation.getArgument(4)));
         when(listConvicted.execute(nullable(String.class), nullable(ConvictedStatus.class), anyInt(), anyInt(), any()))
             .thenAnswer(invocation -> emptyPage(invocation.getArgument(2), invocation.getArgument(3)));
         when(listProcess.execute(nullable(String.class), anyInt(), anyInt(), any()))
@@ -147,6 +189,29 @@ class ListControllersTest {
 
     static Stream<Arguments> paginationBounds() {
         return PATHS.stream().flatMap(path -> Stream.of(Arguments.of(path, 0, 1), Arguments.of(path, 1, 100)));
+    }
+
+    @Test
+    void forwardsAttendancePeriodAndServesNavigationMetadata() throws Exception {
+        mvc.perform(get("/attendance").param("year", "2026").param("month", "9").param("search", "Arthur"))
+            .andExpect(status().isOk());
+        verify(listAttendance).execute("Arthur", 2026, 9, 0, 20, null);
+        when(listAttendanceYears.execute(null)).thenReturn(new AttendanceYearsResponse(List.of(2026, 2025)));
+        when(listAttendanceMonths.execute(2026, null)).thenReturn(new AttendanceMonthsResponse(
+            List.of(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 25L, 1L, 0L, 0L)));
+        mvc.perform(get("/attendance/years")).andExpect(status().isOk())
+            .andExpect(jsonPath("$.years[0]").value(2026));
+        mvc.perform(get("/attendance/months").param("year", "2026")).andExpect(status().isOk())
+            .andExpect(jsonPath("$.counts[8]").value(25))
+            .andExpect(jsonPath("$.counts.length()").value(12));
+    }
+
+    @Test
+    void rejectsInvalidAttendancePeriodParameters() throws Exception {
+        mvc.perform(get("/attendance").param("year", "0")).andExpect(status().isUnprocessableEntity());
+        mvc.perform(get("/attendance").param("month", "13")).andExpect(status().isUnprocessableEntity());
+        mvc.perform(get("/attendance/months").param("year", "9999")).andExpect(status().isUnprocessableEntity());
+        verifyNoInteractions(listAttendance, listAttendanceMonths);
     }
 
     @ParameterizedTest
@@ -270,7 +335,7 @@ class ListControllersTest {
 
     private void verifyList(String path, String search, int page, int size) {
         switch (path) {
-            case "/attendance" -> verify(listAttendance).execute(search, page, size, null);
+            case "/attendance" -> verify(listAttendance).execute(search, null, null, page, size, null);
             case "/convicted" -> verify(listConvicted).execute(search, null, page, size, null);
             case "/processes" -> verify(listProcess).execute(search, page, size, null);
             case "/users", "/usuarios" -> verify(listUsers).execute(search, page, size, null);

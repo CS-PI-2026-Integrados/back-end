@@ -23,6 +23,8 @@ import br.com.sicape.api.application.convicted.dto.request.CreateConvictedReques
 import br.com.sicape.api.application.convicted.dto.request.UpdateConvictedRequest;
 import br.com.sicape.api.application.convicted.dto.response.ConvictedListItemResponse;
 import br.com.sicape.api.application.convicted.dto.response.ConvictedResponse;
+import br.com.sicape.api.application.convicted.dto.response.ConvictedMetricsResponse;
+import br.com.sicape.api.application.convicted.usecase.GetConvictedMetricsUseCase;
 import br.com.sicape.api.application.common.dto.response.PageResponse;
 import br.com.sicape.api.application.convicted.usecase.CreateConvictedUseCase;
 import br.com.sicape.api.application.convicted.usecase.GetConvictedPhotoUseCase;
@@ -50,6 +52,12 @@ public class ConvictedController {
     private final UpdateConvictedStatusUseCase updateStatusUseCase;
     private final UpdateConvictedPhotoUseCase updatePhotoUseCase;
     private final GetConvictedPhotoUseCase getPhotoUseCase;
+    private final GetConvictedMetricsUseCase metricsUseCase;
+
+    @GetMapping("/metrics")
+    public ConvictedMetricsResponse metrics(@AuthenticationPrincipal AuthContext auth) {
+        return metricsUseCase.execute(auth);
+    }
 
     @PostMapping
     public ResponseEntity<ConvictedResponse> create(

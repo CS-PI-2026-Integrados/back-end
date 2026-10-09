@@ -15,6 +15,7 @@ public record AttendanceResponse(
     String phone,
     EmploymentStatus employmentStatus,
     UUID userId,
+    String userName,
     Instant createdAt,
     Instant updatedAt
 ) {
@@ -27,6 +28,7 @@ public record AttendanceResponse(
             attendance.getPhone().value(),
             attendance.getEmploymentStatus(),
             attendance.getUser().getUuid(),
+            attendance.getUser().getName(),
             attendance.getCreatedAt(),
             attendance.getUpdatedAt()
         );
