@@ -2,17 +2,25 @@ package br.com.sicape.api.application.user;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.context.ActiveProfiles;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import br.com.sicape.api.application.oauth.AuthContext;
+import br.com.sicape.api.application.oauth.login.CreateSessionRequest;
+import br.com.sicape.api.application.oauth.login.CreateSessionUseCase;
 import br.com.sicape.api.application.user.dto.request.CreateUserRequest;
 import br.com.sicape.api.application.user.dto.request.UpdateUserRequest;
 import br.com.sicape.api.application.user.dto.response.UserResponse;
@@ -45,10 +53,17 @@ import br.com.sicape.api.domain.valueobject.Cpf;
         "jwt.access-token-duration=15m"
 })
 @ActiveProfiles("development")
+@AutoConfigureMockMvc
 class UserIntegrationTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private MockMvc mvc;
+
+    @Autowired
+    private CreateSessionUseCase createSessionUseCase;
 
     @Autowired
     private CreateUserUseCase createUserUseCase;
@@ -203,6 +218,88 @@ class UserIntegrationTest {
                 .isInstanceOf(ConflictException.class)
                 .hasMessageContaining("Já existe um usuário cadastrado com este CPF.");
     }
+
+            @Test
+            void shouldCreateUserThroughHttpEndpointWhenAdmin() throws Exception {
+            CreateUserRequest request = new CreateUserRequest(
+                "Novo Operador HTTP",
+                "59982564099",
+                "novo.operador.http@sicape.local",
+                "SenhaValida123",
+                UserRole.OPERATOR);
+
+            mvc.perform(post("/users")
+                .header("Authorization", bearerToken(adminUser, "AdminPass123"))
+                .contentType("application/json")
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(header().string("Location", org.hamcrest.Matchers.containsString("/api/usuarios/")))
+                .andExpect(jsonPath("$.name").value("Novo Operador HTTP"))
+                .andExpect(jsonPath("$.email").value("novo.operador.http@sicape.local"))
+                .andExpect(jsonPath("$.cpf").value("59982564099"))
+                .andExpect(jsonPath("$.role").value("operator"))
+                .andExpect(jsonPath("$.is_active").value(true));
+            }
+
+            @Test
+            void shouldRejectHttpCreationWhenUserIsNotAdmin() throws Exception {
+            CreateUserRequest request = new CreateUserRequest(
+                "Outro Operador HTTP",
+                "59982564099",
+                "outro.operador.http@sicape.local",
+                "SenhaValida123",
+                UserRole.OPERATOR);
+
+            mvc.perform(post("/users")
+                .header("Authorization", bearerToken(operatorUser, "OperPass123"))
+                .contentType("application/json")
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value("Apenas administradores podem cadastrar novos usuários."));
+            }
+
+            @Test
+            void shouldRejectHttpCreationWithDuplicateEmail() throws Exception {
+            CreateUserRequest request = new CreateUserRequest(
+                "Duplicado Email HTTP",
+                "59982564099",
+                "admin@sicape.local",
+                "SenhaValida123",
+                UserRole.OPERATOR);
+
+            mvc.perform(post("/users")
+                .header("Authorization", bearerToken(adminUser, "AdminPass123"))
+                .contentType("application/json")
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.fields[*].field").value(org.hamcrest.Matchers.hasItem("email")))
+                .andExpect(jsonPath("$.fields[*].message")
+                .value(org.hamcrest.Matchers.hasItem("Já existe um usuário cadastrado com este e-mail.")));
+            }
+
+            @Test
+            void shouldRejectHttpCreationWithDuplicateCpf() throws Exception {
+            CreateUserRequest request = new CreateUserRequest(
+                "Duplicado CPF HTTP",
+                "51914372093",
+                "outro.cpf.http@sicape.local",
+                "SenhaValida123",
+                UserRole.OPERATOR);
+
+            mvc.perform(post("/users")
+                .header("Authorization", bearerToken(adminUser, "AdminPass123"))
+                .contentType("application/json")
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.fields[*].field").value(org.hamcrest.Matchers.hasItem("cpf")))
+                .andExpect(jsonPath("$.fields[*].message")
+                .value(org.hamcrest.Matchers.hasItem("Já existe um usuário cadastrado com este CPF.")));
+            }
+
+            private String bearerToken(User user, String password) {
+            return "Bearer " + createSessionUseCase.execute(
+                new CreateSessionRequest(user.getCpf(), password)).accessToken();
+            }
 
     @Test
     void shouldListUsersWithPaginationAndFilter() {

@@ -195,12 +195,14 @@ class GroupIntegrationTest {
             auth(UserRole.ADMIN)
         );
         UpdateGroupRequest update = updateRequest("Grupo atualizado", List.of("Marina Costa"), GroupStatus.ACTIVE);
+        update.setDescription("Nova descricao atualizada");
         update.setPredictedEndDate(LocalDate.of(2026, 10, 15));
         update.setStartDate(LocalDate.of(2026, 9, 10));
 
         GroupResponse updated = updateGroupUseCase.execute(created.uuid(), update, auth(UserRole.OPERATOR));
 
         assertThat(updated.name()).isEqualTo("Grupo atualizado");
+        assertThat(updated.description()).isEqualTo("Nova descricao atualizada");
         assertThat(updated.subject()).isEqualTo("Responsabilizacao");
         assertThat(updated.presenters()).containsExactly("Marina Costa");
         assertThat(updated.predictedEndDate()).isEqualTo(LocalDate.of(2026, 10, 15));
