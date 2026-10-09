@@ -10,6 +10,8 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -195,6 +197,14 @@ class AttendanceQueryIntegrationTest {
             .isInstanceOf(ValidationException.class);
         assertThatThrownBy(() -> listUseCase.execute(null, 9999, null, 0, 20, auth))
             .isInstanceOf(ValidationException.class);
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {1, 1899, 1900, 2100, 2101, 9998})
+    void acceptsSameYearRangeForListingAndMonthlyCounts(int year) {
+        assertThat(listUseCase.execute(null, year, null, 0, 20, auth).totalElements()).isZero();
+        assertThat(listUseCase.execute(null, year, 12, 0, 20, auth).totalElements()).isZero();
+        assertThat(listMonthsUseCase.execute(year, auth).counts()).hasSize(12).containsOnly(0L);
     }
 
     @Test

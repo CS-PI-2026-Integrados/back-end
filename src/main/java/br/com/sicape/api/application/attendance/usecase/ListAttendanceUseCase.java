@@ -33,7 +33,7 @@ public class ListAttendanceUseCase {
     public PageResponse<AttendanceResponse> execute(
         String search, Integer year, Integer month, int page, int size, AuthContext auth
     ) {
-        if (year != null && (year < 1900 || year > 2100)) {
+        if (year != null && (year < 1 || year > 9998)) {
             throw new ValidationException("year", "Informe um ano entre 1 e 9998");
         }
         if (month != null && (month < 1 || month > 12 || year == null)) {
