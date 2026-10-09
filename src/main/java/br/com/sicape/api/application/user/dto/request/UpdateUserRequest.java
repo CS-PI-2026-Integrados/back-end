@@ -24,5 +24,11 @@ public record UpdateUserRequest(
 
     @NotNull(message = "O perfil de acesso é obrigatório")
     @JsonAlias({"role", "role_key", "roleKey"})
-    UserRole role
-) {}
+    UserRole role,
+
+    Boolean isActive
+) {
+    public UpdateUserRequest(String name, String email, String password, UserRole role) {
+        this(name, email, password, role, null);
+    }
+}
