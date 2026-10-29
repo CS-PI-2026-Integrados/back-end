@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "SICAPE - API completa",
-    "description": "Template baseado nos controllers, DTOs e validações do checkout atual do SICAPE. Postman Collection v2.1. Contém todas as 33 combinações de método/caminho (incluindo /users e /usuarios), com 41 requisições e variantes.\n\nImporte a coleção e, opcionalmente, o ambiente Development. Execute Login — Administrador antes das rotas protegidas. Credenciais e UUIDs iniciais correspondem aos seeders do perfil development. Em outro ambiente, ajuste as variáveis. Login e refresh capturam tokens; cadastros capturam IDs.\n\nAs duas pastas de usuários são aliases: escolha um caminho para cada operação. Este catálogo contém operações e exemplos alternativos; execute as requisições desejadas individualmente. Cadastros repetidos podem retornar 409. Para apenados, use PUT /convicted/{uuid}/status/{status} para inativar ou reativar; o antigo DELETE retorna 405. Selecione arquivos nos campos photo antes dos uploads.\n\nJSON usa snake_case; parâmetros de consulta seguem os controllers. Grupos usam /group e retornam uuid; cadastros e consultas salvam group_uuid. Participantes só podem ser alterados em grupos PLANNED. /status também requer Bearer. As pastas de usuários usam admin_access_token; as demais herdam access_token. Mantenha tokens e IDs capturados nas variáveis da coleção para evitar sobreposição pelo ambiente. Os scripts validam status HTTP, ID e status nas transições de apenados e MIME de arquivos. Respostas reais devem ser verificadas com a API em execução.",
+    "description": "Template baseado nos controllers, DTOs e validações do checkout atual do SICAPE. Postman Collection v2.1. Contém todas as 34 combinações de método/caminho (incluindo /users e /usuarios), com 42 requisições e variantes.\n\nImporte a coleção e, opcionalmente, o ambiente Development. Execute Login — Administrador antes das rotas protegidas. Credenciais e UUIDs iniciais correspondem aos seeders do perfil development. Em outro ambiente, ajuste as variáveis. Login e refresh capturam tokens; cadastros capturam IDs.\n\nAs duas pastas de usuários são aliases: escolha um caminho para cada operação. Este catálogo contém operações e exemplos alternativos; execute as requisições desejadas individualmente. Cadastros repetidos podem retornar 409. Para apenados, use PUT /convicted/{uuid}/status/{status} para inativar ou reativar; o antigo DELETE retorna 405. Selecione arquivos nos campos photo antes dos uploads.\n\nJSON usa snake_case; parâmetros de consulta seguem os controllers. Grupos usam /group e retornam uuid; cadastros e consultas salvam group_uuid. Participantes só podem ser alterados em grupos PLANNED. /status também requer Bearer. As pastas de usuários usam admin_access_token; as demais herdam access_token. Mantenha tokens e IDs capturados nas variáveis da coleção para evitar sobreposição pelo ambiente. Os scripts validam status HTTP, ID e status nas transições de apenados e MIME de arquivos. Respostas reais devem ser verificadas com a API em execução.\n\nCPF de apenados: respostas JSON padrão mascaradas; telefone completo; consulta exclusiva GET /convicted/{uuid}/cpf para ADMIN e OPERATOR da própria comarca. PDFs mantêm CPF completo. A edição deve omitir cpf quando não houver alteração intencional; a interface precisa ser publicada de forma coordenada com este contrato.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -115,7 +115,7 @@
       "key": "convicted_cpf",
       "value": "11144477735",
       "type": "string",
-      "description": "CPF do apenado selecionado; atualizado ao criar/consultar/atualizar."
+      "description": "CPF completo conhecido, informado explicitamente para busca. Não é capturado das respostas mascaradas nem da consulta de visualização."
     },
     {
       "key": "new_convicted_cpf",
@@ -962,7 +962,7 @@
     },
     {
       "name": "5. Apenados",
-      "description": "Cadastro, consulta, edição e fotos de apenados. Inativos continuam disponíveis em listagens, detalhes e fotos, mas alterações de dados, processos e foto retornam 409. Reative na pasta 9 antes de editar.",
+      "description": "Cadastro, consulta, edição e fotos de apenados. Inativos continuam disponíveis em listagens, detalhes e fotos, mas alterações de dados, processos e foto retornam 409. Reative na pasta 9 antes de editar. Respostas JSON padrão retornam CPF mascarado e telefone completo. O CPF completo exige a consulta explícita de visualização, limitada à comarca autenticada.",
       "item": [
         {
           "name": "Listar apenados",
@@ -1008,7 +1008,7 @@
                 }
               ]
             },
-            "description": "Lista apenados da comarca, ativos e inativos quando status é omitido. Ative a linha status para filtrar por ACTIVE ou INACTIVE; valor inválido retorna 422. search aceita nome, CPF ou número do processo. Ative a linha search para filtrar."
+            "description": "Lista apenados da comarca, ativos e inativos quando status é omitido. Ative a linha status para filtrar por ACTIVE ou INACTIVE; valor inválido retorna 422. search aceita nome, CPF ou número do processo. Ative a linha search para filtrar. A resposta retorna cpf mascarado e phone completo."
           },
           "event": [
             {
@@ -1016,7 +1016,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('HTTP esperado: 200', function () { pm.response.to.have.status(200); });"
+                  "pm.test('HTTP esperado: 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "    pm.test('CPF mascarado e telefone completo', function () {",
+                  "        const data = pm.response.json();",
+                  "        const items = Array.isArray(data.content) ? data.content : [data];",
+                  "        items.forEach(function (item) {",
+                  "            pm.expect(item.cpf).to.match(/^\\*{3}\\.\\d{3}\\.\\d{3}-\\*{2}$/);",
+                  "            pm.expect(item.phone).to.match(/^\\d{10,11}$/);",
+                  "        });",
+                  "    });",
+                  "}"
                 ]
               }
             }
@@ -1060,7 +1070,7 @@
                 }
               ]
             },
-            "description": "Busca pelo nome do apenado."
+            "description": "Busca pelo nome do apenado. A resposta retorna cpf mascarado e phone completo."
           },
           "event": [
             {
@@ -1068,7 +1078,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('HTTP esperado: 200', function () { pm.response.to.have.status(200); });"
+                  "pm.test('HTTP esperado: 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "    pm.test('CPF mascarado e telefone completo', function () {",
+                  "        const data = pm.response.json();",
+                  "        const items = Array.isArray(data.content) ? data.content : [data];",
+                  "        items.forEach(function (item) {",
+                  "            pm.expect(item.cpf).to.match(/^\\*{3}\\.\\d{3}\\.\\d{3}-\\*{2}$/);",
+                  "            pm.expect(item.phone).to.match(/^\\d{10,11}$/);",
+                  "        });",
+                  "    });",
+                  "}"
                 ]
               }
             }
@@ -1112,7 +1132,7 @@
                 }
               ]
             },
-            "description": "Busca por CPF, com ou sem pontuação."
+            "description": "Busca por CPF, com ou sem pontuação. A resposta retorna cpf mascarado e phone completo."
           },
           "event": [
             {
@@ -1120,7 +1140,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('HTTP esperado: 200', function () { pm.response.to.have.status(200); });"
+                  "pm.test('HTTP esperado: 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "    pm.test('CPF mascarado e telefone completo', function () {",
+                  "        const data = pm.response.json();",
+                  "        const items = Array.isArray(data.content) ? data.content : [data];",
+                  "        items.forEach(function (item) {",
+                  "            pm.expect(item.cpf).to.match(/^\\*{3}\\.\\d{3}\\.\\d{3}-\\*{2}$/);",
+                  "            pm.expect(item.phone).to.match(/^\\d{10,11}$/);",
+                  "        });",
+                  "    });",
+                  "}"
                 ]
               }
             }
@@ -1164,7 +1194,7 @@
                 }
               ]
             },
-            "description": "Busca pelo número do processo."
+            "description": "Busca pelo número do processo. A resposta retorna cpf mascarado e phone completo."
           },
           "event": [
             {
@@ -1172,7 +1202,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('HTTP esperado: 200', function () { pm.response.to.have.status(200); });"
+                  "pm.test('HTTP esperado: 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "    pm.test('CPF mascarado e telefone completo', function () {",
+                  "        const data = pm.response.json();",
+                  "        const items = Array.isArray(data.content) ? data.content : [data];",
+                  "        items.forEach(function (item) {",
+                  "            pm.expect(item.cpf).to.match(/^\\*{3}\\.\\d{3}\\.\\d{3}-\\*{2}$/);",
+                  "            pm.expect(item.phone).to.match(/^\\d{10,11}$/);",
+                  "        });",
+                  "    });",
+                  "}"
                 ]
               }
             }
@@ -1204,7 +1244,7 @@
                 "convicted"
               ]
             },
-            "description": "Salva convicted_uuid, convicted_cpf e o processo ativo vinculado. CPF deve ser único e válido. Data de nascimento não pode ser futura. processes é opcional; quando preenchido, exige exatamente um principal, IDs únicos de processos ativos da mesma comarca. Foto enviada em rota separada.",
+            "description": "Salva convicted_uuid e o processo ativo vinculado. CPF deve ser único e válido. Data de nascimento não pode ser futura. processes é opcional; quando preenchido, exige exatamente um principal, IDs únicos de processos ativos da mesma comarca. Foto enviada em rota separada. A resposta retorna cpf mascarado e phone completo.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Apenado Postman\",\n  \"cpf\": \"{{new_convicted_cpf}}\",\n  \"birth_date\": \"1990-03-11\",\n  \"phone\": \"11988881003\",\n  \"address\": {\n    \"zip_code\": \"01001000\",\n    \"street\": \"Praça da Sé\",\n    \"number\": \"100\",\n    \"complement\": \"Apto 12\",\n    \"neighborhood\": \"Sé\",\n    \"city\": \"São Paulo\",\n    \"state\": \"SP\"\n  },\n  \"employment_status\": \"UNEMPLOYED\",\n  \"processes\": [\n    {\n      \"id\": \"{{active_process_uuid}}\",\n      \"principal\": true\n    }\n  ]\n}",
@@ -1225,7 +1265,6 @@
                   "if (pm.response.code >= 200 && pm.response.code < 300) {",
                   "    const data = pm.response.json();",
                   "    if (data.id) pm.collectionVariables.set('convicted_uuid', data.id);",
-                  "    if (data.cpf) pm.collectionVariables.set('convicted_cpf', data.cpf);",
                   "    const process = (data.processes || []).find(p => p.principal && p.status === 'ACTIVE')",
                   "        || (data.processes || []).find(p => p.status === 'ACTIVE');",
                   "    if (process) {",
@@ -1235,6 +1274,16 @@
                   "        pm.collectionVariables.set('active_process_uuid', '');",
                   "        pm.collectionVariables.set('active_process_number', '');",
                   "    }",
+                  "}",
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "    pm.test('CPF mascarado e telefone completo', function () {",
+                  "        const data = pm.response.json();",
+                  "        const items = Array.isArray(data.content) ? data.content : [data];",
+                  "        items.forEach(function (item) {",
+                  "            pm.expect(item.cpf).to.match(/^\\*{3}\\.\\d{3}\\.\\d{3}-\\*{2}$/);",
+                  "            pm.expect(item.phone).to.match(/^\\d{10,11}$/);",
+                  "        });",
+                  "    });",
                   "}"
                 ]
               }
@@ -1263,7 +1312,7 @@
                 "{{convicted_uuid}}"
               ]
             },
-            "description": "Consulta apenado ativo ou inativo da comarca. Atualiza convicted_cpf e, quando houver, o processo ativo a usar nas presenças. Registrar presença exige apenado ativo."
+            "description": "Consulta apenado ativo ou inativo da comarca. Atualiza, quando houver, o processo ativo a usar nas presenças. Registrar presença exige apenado ativo. A resposta retorna cpf mascarado e phone completo."
           },
           "event": [
             {
@@ -1275,7 +1324,6 @@
                   "if (pm.response.code >= 200 && pm.response.code < 300) {",
                   "    const data = pm.response.json();",
                   "    if (data.id) pm.collectionVariables.set('convicted_uuid', data.id);",
-                  "    if (data.cpf) pm.collectionVariables.set('convicted_cpf', data.cpf);",
                   "    const process = (data.processes || []).find(p => p.principal && p.status === 'ACTIVE')",
                   "        || (data.processes || []).find(p => p.status === 'ACTIVE');",
                   "    if (process) {",
@@ -1285,6 +1333,16 @@
                   "        pm.collectionVariables.set('active_process_uuid', '');",
                   "        pm.collectionVariables.set('active_process_number', '');",
                   "    }",
+                  "}",
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "    pm.test('CPF mascarado e telefone completo', function () {",
+                  "        const data = pm.response.json();",
+                  "        const items = Array.isArray(data.content) ? data.content : [data];",
+                  "        items.forEach(function (item) {",
+                  "            pm.expect(item.cpf).to.match(/^\\*{3}\\.\\d{3}\\.\\d{3}-\\*{2}$/);",
+                  "            pm.expect(item.phone).to.match(/^\\d{10,11}$/);",
+                  "        });",
+                  "    });",
                   "}"
                 ]
               }
@@ -1293,7 +1351,52 @@
           "response": []
         },
         {
-          "name": "Atualizar apenado — todos os campos",
+          "name": "Visualizar CPF completo do apenado",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/convicted/{{convicted_uuid}}/cpf",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "convicted",
+                "{{convicted_uuid}}",
+                "cpf"
+              ]
+            },
+            "description": "Consulta explícita após Visualizar CPF. Requer ADMIN ou OPERATOR com sessão válida e apenado ativo ou inativo da própria comarca. Retorna somente cpf com 11 dígitos e Cache-Control: no-store. Falha de autenticação ou permissão: 403; apenado inexistente ou de outra comarca: 404; UUID malformado: 422. Não salva o CPF revelado em variáveis. PDFs preservam CPF completo como exceção à regra das respostas JSON padrão."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP esperado: 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Somente CPF completo, sem armazenamento em cache', function () {",
+                  "        const data = pm.response.json();",
+                  "        pm.expect(Object.keys(data)).to.eql(['cpf']);",
+                  "        pm.expect(data.cpf).to.match(/^\\d{11}$/);",
+                  "        pm.expect(pm.response.headers.get('Cache-Control')).to.include('no-store');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Atualizar apenado — sem alterar CPF",
           "request": {
             "method": "PUT",
             "header": [
@@ -1318,10 +1421,10 @@
                 "{{convicted_uuid}}"
               ]
             },
-            "description": "Apesar de usar PUT, somente os campos enviados são alterados. processes substitui toda a lista e exige exatamente um principal quando não vazia. employment_status aceita FORMAL_WORK, INFORMAL_WORK ou UNEMPLOYED; null limpa essa informação. Apenado inativo retorna 409; reative antes de alterar.",
+            "description": "Apesar de usar PUT, somente os campos enviados são alterados. processes substitui toda a lista e exige exatamente um principal quando não vazia. employment_status aceita FORMAL_WORK, INFORMAL_WORK ou UNEMPLOYED; null limpa essa informação. Apenado inativo retorna 409; reative antes de alterar. O exemplo omite cpf para preservar o valor armazenado. Para alterá-lo intencionalmente, envie um CPF completo e válido; nunca reenvie a máscara. A resposta retorna cpf mascarado e phone completo.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Apenado Postman atualizado\",\n  \"cpf\": \"{{convicted_cpf}}\",\n  \"birth_date\": \"1990-03-11\",\n  \"phone\": \"11988881003\",\n  \"address\": {\n    \"zip_code\": \"01001000\",\n    \"street\": \"Praça da Sé\",\n    \"number\": \"100\",\n    \"complement\": \"Apto 12\",\n    \"neighborhood\": \"Sé\",\n    \"city\": \"São Paulo\",\n    \"state\": \"SP\"\n  },\n  \"employment_status\": \"FORMAL_WORK\",\n  \"processes\": [\n    {\n      \"id\": \"{{active_process_uuid}}\",\n      \"principal\": true\n    }\n  ]\n}",
+              "raw": "{\n  \"name\": \"Apenado Postman atualizado\",\n  \"birth_date\": \"1990-03-11\",\n  \"phone\": \"11988881003\",\n  \"address\": {\n    \"zip_code\": \"01001000\",\n    \"street\": \"Praça da Sé\",\n    \"number\": \"100\",\n    \"complement\": \"Apto 12\",\n    \"neighborhood\": \"Sé\",\n    \"city\": \"São Paulo\",\n    \"state\": \"SP\"\n  },\n  \"employment_status\": \"FORMAL_WORK\",\n  \"processes\": [\n    {\n      \"id\": \"{{active_process_uuid}}\",\n      \"principal\": true\n    }\n  ]\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1339,7 +1442,6 @@
                   "if (pm.response.code >= 200 && pm.response.code < 300) {",
                   "    const data = pm.response.json();",
                   "    if (data.id) pm.collectionVariables.set('convicted_uuid', data.id);",
-                  "    if (data.cpf) pm.collectionVariables.set('convicted_cpf', data.cpf);",
                   "    const process = (data.processes || []).find(p => p.principal && p.status === 'ACTIVE')",
                   "        || (data.processes || []).find(p => p.status === 'ACTIVE');",
                   "    if (process) {",
@@ -1349,6 +1451,16 @@
                   "        pm.collectionVariables.set('active_process_uuid', '');",
                   "        pm.collectionVariables.set('active_process_number', '');",
                   "    }",
+                  "}",
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "    pm.test('CPF mascarado e telefone completo', function () {",
+                  "        const data = pm.response.json();",
+                  "        const items = Array.isArray(data.content) ? data.content : [data];",
+                  "        items.forEach(function (item) {",
+                  "            pm.expect(item.cpf).to.match(/^\\*{3}\\.\\d{3}\\.\\d{3}-\\*{2}$/);",
+                  "            pm.expect(item.phone).to.match(/^\\d{10,11}$/);",
+                  "        });",
+                  "    });",
                   "}"
                 ]
               }
@@ -1382,7 +1494,7 @@
                 "{{convicted_uuid}}"
               ]
             },
-            "description": "Altera apenas os campos enviados do endereço. complement=null remove o complemento; os demais campos obrigatórios não aceitam null. Apenado inativo retorna 409; reative antes de alterar.",
+            "description": "Altera apenas os campos enviados do endereço. complement=null remove o complemento; os demais campos obrigatórios não aceitam null. Apenado inativo retorna 409; reative antes de alterar. A resposta retorna cpf mascarado e phone completo.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"address\": {\n    \"number\": \"200\",\n    \"complement\": null\n  }\n}",
@@ -1399,7 +1511,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('HTTP esperado: 200', function () { pm.response.to.have.status(200); });"
+                  "pm.test('HTTP esperado: 200', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "    pm.test('CPF mascarado e telefone completo', function () {",
+                  "        const data = pm.response.json();",
+                  "        const items = Array.isArray(data.content) ? data.content : [data];",
+                  "        items.forEach(function (item) {",
+                  "            pm.expect(item.cpf).to.match(/^\\*{3}\\.\\d{3}\\.\\d{3}-\\*{2}$/);",
+                  "            pm.expect(item.phone).to.match(/^\\d{10,11}$/);",
+                  "        });",
+                  "    });",
+                  "}"
                 ]
               }
             }
@@ -1432,7 +1554,7 @@
                 "{{convicted_uuid}}"
               ]
             },
-            "description": "Substitui toda a lista pelos processos enviados. IDs únicos, ativos e da mesma comarca. Exatamente um principal em lista não vazia. processes=[] remove todos os vínculos. Apenado inativo retorna 409; reative antes de alterar.",
+            "description": "Substitui toda a lista pelos processos enviados. IDs únicos, ativos e da mesma comarca. Exatamente um principal em lista não vazia. processes=[] remove todos os vínculos. Apenado inativo retorna 409; reative antes de alterar. A resposta retorna cpf mascarado e phone completo.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"processes\": [\n    {\n      \"id\": \"{{active_process_uuid}}\",\n      \"principal\": true\n    }\n  ]\n}",
@@ -1453,7 +1575,6 @@
                   "if (pm.response.code >= 200 && pm.response.code < 300) {",
                   "    const data = pm.response.json();",
                   "    if (data.id) pm.collectionVariables.set('convicted_uuid', data.id);",
-                  "    if (data.cpf) pm.collectionVariables.set('convicted_cpf', data.cpf);",
                   "    const process = (data.processes || []).find(p => p.principal && p.status === 'ACTIVE')",
                   "        || (data.processes || []).find(p => p.status === 'ACTIVE');",
                   "    if (process) {",
@@ -1463,6 +1584,16 @@
                   "        pm.collectionVariables.set('active_process_uuid', '');",
                   "        pm.collectionVariables.set('active_process_number', '');",
                   "    }",
+                  "}",
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "    pm.test('CPF mascarado e telefone completo', function () {",
+                  "        const data = pm.response.json();",
+                  "        const items = Array.isArray(data.content) ? data.content : [data];",
+                  "        items.forEach(function (item) {",
+                  "            pm.expect(item.cpf).to.match(/^\\*{3}\\.\\d{3}\\.\\d{3}-\\*{2}$/);",
+                  "            pm.expect(item.phone).to.match(/^\\d{10,11}$/);",
+                  "        });",
+                  "    });",
                   "}"
                 ]
               }
