@@ -26,7 +26,7 @@ public record ConvictedResponse(
         return new ConvictedResponse(
             convicted.getUuid(),
             convicted.getName(),
-            convicted.getCpf().value(),
+            convicted.getCpf().masked(),
             convicted.getBirthDate(),
             convicted.getPhone().value(),
             AddressResponse.from(convicted.getAddress()),

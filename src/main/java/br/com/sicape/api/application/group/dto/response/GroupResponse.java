@@ -49,7 +49,7 @@ public record GroupResponse(
                 .map(convicted -> new GroupConvictedResponse(
                     convicted.getUuid(),
                     convicted.getName(),
-                    convicted.getCpf().value()
+                    convicted.getCpf().masked()
                 ))
                 .toList()
         );

@@ -56,6 +56,7 @@ import br.com.sicape.api.application.attendance.dto.AttendanceYearsResponse;
 import br.com.sicape.api.application.attendance.dto.AttendanceMonthsResponse;
 import br.com.sicape.api.application.common.dto.response.PageResponse;
 import br.com.sicape.api.application.convicted.usecase.CreateConvictedUseCase;
+import br.com.sicape.api.application.convicted.usecase.GetConvictedCpfUseCase;
 import br.com.sicape.api.application.convicted.usecase.GetConvictedPhotoUseCase;
 import br.com.sicape.api.application.convicted.usecase.GetConvictedUseCase;
 import br.com.sicape.api.application.convicted.usecase.ListConvictedUseCase;
@@ -81,7 +82,7 @@ import br.com.sicape.api.domain.exception.ResourceNotFoundException;
 @Import(Settings.class)
 @MockitoBean(types = {
     GetAttendancePhotoUseCase.class, GetAttendanceReceiptUseCase.class, GetAttendanceUseCase.class,
-    GetConvictedPhotoUseCase.class, GetConvictedUseCase.class,
+    GetConvictedPhotoUseCase.class, GetConvictedUseCase.class, GetConvictedCpfUseCase.class,
     UpdateConvictedPhotoUseCase.class, UpdateConvictedUseCase.class,
     GetUserUseCase.class, DeleteUserUseCase.class, JwtAuthenticationFilter.class
 })
