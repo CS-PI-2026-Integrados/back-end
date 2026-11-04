@@ -21,12 +21,14 @@ import org.springframework.web.multipart.MultipartFile;
 
 import br.com.sicape.api.application.convicted.dto.request.CreateConvictedRequest;
 import br.com.sicape.api.application.convicted.dto.request.UpdateConvictedRequest;
+import br.com.sicape.api.application.convicted.dto.response.ConvictedCpfResponse;
 import br.com.sicape.api.application.convicted.dto.response.ConvictedListItemResponse;
 import br.com.sicape.api.application.convicted.dto.response.ConvictedResponse;
 import br.com.sicape.api.application.convicted.dto.response.ConvictedMetricsResponse;
 import br.com.sicape.api.application.convicted.usecase.GetConvictedMetricsUseCase;
 import br.com.sicape.api.application.common.dto.response.PageResponse;
 import br.com.sicape.api.application.convicted.usecase.CreateConvictedUseCase;
+import br.com.sicape.api.application.convicted.usecase.GetConvictedCpfUseCase;
 import br.com.sicape.api.application.convicted.usecase.GetConvictedPhotoUseCase;
 import br.com.sicape.api.application.convicted.usecase.GetConvictedUseCase;
 import br.com.sicape.api.application.convicted.usecase.ListConvictedUseCase;
@@ -48,6 +50,7 @@ public class ConvictedController {
     private final CreateConvictedUseCase createUseCase;
     private final ListConvictedUseCase listUseCase;
     private final GetConvictedUseCase getUseCase;
+    private final GetConvictedCpfUseCase getCpfUseCase;
     private final UpdateConvictedUseCase updateUseCase;
     private final UpdateConvictedStatusUseCase updateStatusUseCase;
     private final UpdateConvictedPhotoUseCase updatePhotoUseCase;
@@ -85,6 +88,16 @@ public class ConvictedController {
         @AuthenticationPrincipal AuthContext authContext
     ) {
         return getUseCase.execute(uuid, authContext);
+    }
+
+    @GetMapping("/{uuid}/cpf")
+    public ResponseEntity<ConvictedCpfResponse> getCpf(
+        @PathVariable UUID uuid,
+        @AuthenticationPrincipal AuthContext authContext
+    ) {
+        return ResponseEntity.ok()
+            .cacheControl(CacheControl.noStore())
+            .body(getCpfUseCase.execute(uuid, authContext));
     }
 
     @PutMapping("/{uuid}")
