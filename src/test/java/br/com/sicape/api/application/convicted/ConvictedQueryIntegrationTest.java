@@ -94,7 +94,7 @@ class ConvictedQueryIntegrationTest {
     @EnumSource(ConvictedStatus.class)
     void filtersStatusAndSearchWithinDistrictWithCorrectPagination(ConvictedStatus status) {
         long expectedCount = status == ConvictedStatus.ACTIVE ? 2 : 1;
-        var expectedFirst = status == ConvictedStatus.ACTIVE ? active : inactive;
+        var expectedFirst = status == ConvictedStatus.ACTIVE ? otherActive : inactive;
         for (String search : new String[]{null, "  SILVA  ", "0001234-56.2026.8.26.0001", "00012345620268260001"}) {
             var result = listUseCase.execute(search, status, 0, 1, auth);
 
@@ -107,7 +107,7 @@ class ConvictedQueryIntegrationTest {
         }
         var second = listUseCase.execute("Silva", status, 1, 1, auth);
         assertThat(second.content()).extracting(ConvictedListItemResponse::id)
-            .containsExactlyElementsOf(status == ConvictedStatus.ACTIVE ? List.of(otherActive.getUuid()) : List.of());
+            .containsExactlyElementsOf(status == ConvictedStatus.ACTIVE ? List.of(active.getUuid()) : List.of());
         assertThat(second.totalElements()).isEqualTo(expectedCount);
     }
 
