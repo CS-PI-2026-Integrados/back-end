@@ -7,7 +7,9 @@ import static org.mockito.Mockito.*;
 import java.time.LocalDate;
 import java.util.UUID;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -51,9 +53,12 @@ class AttendanceReceiptPersistenceTest {
     @MockitoBean private MediaAssetStore media;
     @MockitoBean private ReceiptPdfRenderer renderer;
 
-    @Test
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(strings = "11988881001")
     @Transactional
-    void persistsReceiptAndServesOnlySameDistrictWithoutRegeneration() {
+    void persistsReceiptAndServesOnlySameDistrictWithoutRegeneration(String phoneNumber) {
+        var phone = phoneNumber == null ? null : Phone.of(phoneNumber);
         var district = new JudicialDistrict();
         district.setName("Comarca Central");
         district = districts.saveAndFlush(district);
@@ -64,7 +69,7 @@ class AttendanceReceiptPersistenceTest {
             "operador-receipt@test.local", "hash", UserRole.OPERATOR, district));
         var address = new Address("12345678", "Rua Central", "10", null, "Centro", "Cidade", "SP");
         var convicted = convicteds.saveAndFlush(new Convicted("Arthur Morgan", Cpf.of("11144477735"),
-            LocalDate.of(1990, 1, 1), Phone.of("11988881001"), address,
+            LocalDate.of(1990, 1, 1), phone, address,
             EmploymentStatus.FORMAL_WORK, district));
         var process = processes.saveAndFlush(new JudicialProcess("TEST-" + UUID.randomUUID(),
             ProcessStatus.ACTIVE, district));
@@ -77,7 +82,7 @@ class AttendanceReceiptPersistenceTest {
         var receipt = assets.saveAndFlush(new MediaAsset(UUID.randomUUID(), UUID.randomUUID().toString(),
             "application/pdf", 8, MediaAssetKind.RECEIPT));
         var attendance = attendances.saveAndFlush(new Attendance(convicted, process, district, user,
-            address, Phone.of("11988881001"), EmploymentStatus.FORMAL_WORK, photo));
+            address, phone, EmploymentStatus.FORMAL_WORK, photo));
         var id = attendance.getUuid();
         byte[] pdf = "%PDF-1.7".getBytes();
         when(media.read(photo)).thenReturn(new MediaContent(new byte[]{1, 2, 3}, "image/png"));
@@ -93,6 +98,7 @@ class AttendanceReceiptPersistenceTest {
         assertThat(first.bytes()).isEqualTo(pdf);
         entityManager.clear();
         var persisted = attendances.findByUuidAndDistrict(id, district).orElseThrow();
+        assertThat(persisted.getPhone()).isEqualTo(phone);
         assertThat(persisted.getReceipt().getUuid()).isEqualTo(receipt.getUuid());
         assertThat(useCase.execute(id, new AuthContext(user, district, null)).bytes()).isEqualTo(pdf);
         var forbiddenDistrict = otherDistrict;
@@ -100,6 +106,7 @@ class AttendanceReceiptPersistenceTest {
             .isInstanceOf(ResourceNotFoundException.class);
         var snapshotCaptor = ArgumentCaptor.forClass(ReceiptSnapshot.class);
         verify(renderer, times(1)).render(snapshotCaptor.capture(), any(), any());
+        assertThat(snapshotCaptor.getValue().phone()).isEqualTo(phone == null ? null : "(11) 98888-1001");
         assertThat(snapshotCaptor.getValue().templateXhtml()).hasSizeGreaterThan(2048);
         assertThat(snapshotCaptor.getValue().logoSha256()).isEqualTo("logo-hash");
         verify(media, times(1)).save(pdf, "application/pdf", MediaAssetKind.RECEIPT);

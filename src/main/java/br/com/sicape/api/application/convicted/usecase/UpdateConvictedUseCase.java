@@ -61,17 +61,17 @@ public class UpdateConvictedUseCase {
         }
         if (request.isBirthDateProvided()) {
             LocalDate birthDate = request.getBirthDate();
-            if (birthDate == null || birthDate.isAfter(LocalDate.now())) {
-                throw new ValidationException("birth_date", "A data de nascimento não pode ser nula ou futura");
+            if (birthDate != null && birthDate.isAfter(LocalDate.now())) {
+                throw new ValidationException("birth_date", "A data de nascimento não pode ser futura");
             }
             convicted.updateBirthDate(birthDate);
         }
         if (request.isPhoneProvided()) {
             Phone phone;
             try {
-                 phone = (Phone.of(request.getPhone()));
+                phone = Phone.ofNullable(request.getPhone());
             } catch (IllegalArgumentException exception) {
-                 throw new ValidationException("phone", exception.getMessage());
+                throw new ValidationException("phone", exception.getMessage());
             }
             convicted.updatePhone(phone);
         }

@@ -30,7 +30,7 @@ public record ReceiptSnapshot(
             attendance.getUuid(),
             attendance.getCreatedAt(),
             attendance.getAddress().formatted(),
-            attendance.getPhone().formatted(),
+            attendance.getPhone() == null ? null : attendance.getPhone().formatted(),
             attendance.getEmploymentStatus().displayName(),
             attendance.getConvicted().getName(),
             attendance.getConvicted().getCpf().formatted(),

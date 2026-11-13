@@ -10,7 +10,7 @@ public final class Phone {
     private static final String INVALID_PHONE = "O telefone deve possuir DDD e número com 8 ou 9 dígitos";
     private static final String PHONE_FORMAT = "(?:[1-9]\\d|\\([1-9]\\d\\))\\s?\\d{4,5}-?\\d{4}";
 
-    @Column(name = "phone", nullable = false, length = 11)
+    @Column(name = "phone", length = 11)
     private String value;
 
     private Phone() {}
@@ -22,6 +22,10 @@ public final class Phone {
 
         String digits = value.replaceAll("\\D", "");
         this.value = digits;
+    }
+
+    public static Phone ofNullable(String value) {
+        return value == null || value.isBlank() ? null : of(value);
     }
 
     public static Phone of(String value) {

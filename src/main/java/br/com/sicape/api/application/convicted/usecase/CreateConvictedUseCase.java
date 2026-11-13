@@ -109,7 +109,7 @@ public class CreateConvictedUseCase {
 
     private Phone toPhone(String value) {
         try {
-            return Phone.of(value);
+            return Phone.ofNullable(value);
         } catch (IllegalArgumentException exception) {
             throw new ValidationException("phone", exception.getMessage());
         }

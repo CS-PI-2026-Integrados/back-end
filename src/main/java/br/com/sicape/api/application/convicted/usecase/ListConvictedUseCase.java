@@ -70,7 +70,7 @@ public class ListConvictedUseCase {
                 convicted.getUuid(),
                 convicted.getName(),
                 convicted.getCpf().masked(),
-                convicted.getPhone().value(),
+                convicted.getPhone() == null ? null : convicted.getPhone().value(),
                 AddressResponse.from(convicted.getAddress()),
                 convicted.getEmploymentStatus(),
                 main == null ? null : main.getProcess().getNumber(),

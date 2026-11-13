@@ -42,7 +42,7 @@ public class Attendance extends BaseEntity {
     @Embedded
     @AttributeOverride(
         name = "value",
-        column = @Column(name = "phone", nullable = false, updatable = false, length = 11)
+        column = @Column(name = "phone", updatable = false, length = 11)
     )
     private Phone phone;
 
@@ -82,9 +82,6 @@ public class Attendance extends BaseEntity {
         }
         if (address == null) {
             throw new IllegalArgumentException("O endereço é obrigatório");
-        }
-        if (phone == null) {
-            throw new IllegalArgumentException("O telefone é obrigatório");
         }
         if (employmentStatus == null) {
             throw new IllegalArgumentException("A situação empregatícia é obrigatória");

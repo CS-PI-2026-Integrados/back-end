@@ -7,6 +7,9 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import br.com.sicape.api.application.attendance.dto.CreateAttendanceRequest;
 import br.com.sicape.api.application.attendance.usecase.CreateAttendanceUseCase;
@@ -61,16 +64,23 @@ class CreateAttendanceUseCaseTest {
         useCase.execute(request, AttendanceValidationTest.jpeg(3), "image/jpeg", auth);
     }
 
-    @Test
-    void createsAttendanceAndUpdatesOnlyContactData() {
-        execute();
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(strings = {"(11) 91234-5678", "", " "})
+    void createsAttendanceAndUpdatesOnlyContactData(String phone) {
+        request = new CreateAttendanceRequest(request.convictedId(), request.processId(),
+            request.address(), phone, request.employmentStatus());
+        var expectedPhone = phone == null || phone.isBlank() ? null : Phone.of(phone);
+        var response = useCase.execute(request, AttendanceValidationTest.jpeg(3), "image/jpeg", auth);
+        assertThat(response.phone()).isEqualTo(expectedPhone == null ? null : expectedPhone.value());
         var captor = ArgumentCaptor.forClass(Attendance.class);
         verify(attendances).saveAndFlush(captor.capture());
         assertThat(captor.getValue().getUser()).isSameAs(auth.user());
         assertThat(captor.getValue().getPhoto()).isSameAs(photo);
         verify(convicteds).findForAttendance(request.convictedId(), auth.district(), ConvictedStatus.ACTIVE);
         verify(convicted).updateAddress(any());
-        verify(convicted).updatePhone(Phone.of("(11) 91234-5678"));
+        assertThat(captor.getValue().getPhone()).isEqualTo(expectedPhone);
+        verify(convicted).updatePhone(expectedPhone);
         verify(convicted).updateEmploymentStatus(EmploymentStatus.FORMAL_WORK);
         verify(convicted, never()).completePhoto(any());
         verify(media, never()).deleteContent(any());

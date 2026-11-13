@@ -41,7 +41,6 @@ public class Convicted extends BaseEntity {
     @Column(nullable = false, unique = true, length = 11)
     private Cpf cpf;
 
-    @Column(nullable = false)
     private LocalDate birthDate;
 
     @Embedded
@@ -107,16 +106,13 @@ public class Convicted extends BaseEntity {
     }
 
     public void updateBirthDate(LocalDate birthDate) {
-        if (birthDate == null || birthDate.isAfter(LocalDate.now())) {
+        if (birthDate != null && birthDate.isAfter(LocalDate.now())) {
             throw new IllegalArgumentException("A data de nascimento não pode ser futura");
         }
         this.birthDate = birthDate;
     }
 
     public void updatePhone(Phone phone) {
-        if (phone == null) {
-            throw new IllegalArgumentException("O telefone é obrigatório");
-        }
         this.phone = phone;
     }
 

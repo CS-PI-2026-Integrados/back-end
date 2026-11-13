@@ -44,7 +44,7 @@ public class CreateAttendanceUseCase {
         }
         Phone phone;
         try {
-            phone = Phone.of(request.phone());
+            phone = Phone.ofNullable(request.phone());
         } catch (IllegalArgumentException exception) {
             throw new ValidationException("phone", exception.getMessage());
         }

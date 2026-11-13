@@ -81,7 +81,8 @@ public class ReceiptPdfRendererImpl implements ReceiptPdfRenderer {
         html = field(html, "courtName", snapshot.courtName());
         html = field(html, "operatorName", snapshot.operatorName());
         html = field(html, "protocol", snapshot.protocol());
-        html = field(html, "phone", snapshot.phone());
+        html = field(html, "phoneStatus", snapshot.phone() == null ? "—" : "Confirmado");
+        html = field(html, "phone", snapshot.phone() == null ? "Não informado" : snapshot.phone());
         html = field(html, "address", snapshot.address());
         html = field(html, "employmentStatus", snapshot.employmentStatus());
         html = field(html, "attendedAt", DATE_TIME.format(snapshot.attendedAt()));

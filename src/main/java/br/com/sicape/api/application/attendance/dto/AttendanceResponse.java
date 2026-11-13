@@ -24,7 +24,7 @@ public record AttendanceResponse(
             attendance.getConvicted().getUuid(),
             attendance.getProcess().getUuid(),
             AddressResponse.from(attendance.getAddress()),
-            attendance.getPhone().value(),
+            attendance.getPhone() == null ? null : attendance.getPhone().value(),
             attendance.getEmploymentStatus(),
             attendance.getUser().getUuid(),
             attendance.getCreatedAt(),
