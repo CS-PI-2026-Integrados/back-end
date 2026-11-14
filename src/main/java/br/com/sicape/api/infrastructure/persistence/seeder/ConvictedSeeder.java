@@ -25,7 +25,7 @@ import lombok.RequiredArgsConstructor;
 
 @Component
 @Order(4)
-@Profile("development")
+@Profile({"development", "seed"})
 @RequiredArgsConstructor
 public class ConvictedSeeder implements CommandLineRunner {
     private final JudicialDistrictRepository districtRepo;

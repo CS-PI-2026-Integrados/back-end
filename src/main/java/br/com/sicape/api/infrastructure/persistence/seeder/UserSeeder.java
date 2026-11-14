@@ -23,7 +23,7 @@ import lombok.RequiredArgsConstructor;
  */
 @Component
 @Order(2)
-@Profile("development")
+@Profile({"development", "seed"})
 @RequiredArgsConstructor
 public class UserSeeder implements CommandLineRunner {
     private final JudicialDistrictRepository districtRepo;

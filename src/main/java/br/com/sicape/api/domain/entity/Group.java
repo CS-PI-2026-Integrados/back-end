@@ -19,6 +19,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OrderColumn;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -45,6 +46,7 @@ public class Group extends BaseEntity {
         joinColumns = @JoinColumn(name = "group_id")
     )
     @Column(name = "presenter", nullable = false, length = 255)
+    @OrderColumn(name = "presenter_order", nullable = false)
     private List<String> presenters = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)
@@ -70,6 +72,7 @@ public class Group extends BaseEntity {
         joinColumns = @JoinColumn(name = "group_id"),
         inverseJoinColumns = @JoinColumn(name = "convicted_id")
     )
+    @OrderColumn(name = "convicted_order", nullable = false)
     private List<Convicted> convicteds = new ArrayList<>();
 
     @Column(nullable = true)

@@ -20,7 +20,7 @@ import lombok.RequiredArgsConstructor;
 
 @Component
 @Order(5)
-@Profile("development")
+@Profile({"development", "seed"})
 @RequiredArgsConstructor
 public class GroupSeeder implements CommandLineRunner {
     private final GroupRepository groupRepo;
