@@ -21,6 +21,7 @@ import jakarta.persistence.EntityManager;
 @ActiveProfiles("development")
 class DemoCleanupIntegrationTest {
     @Autowired EntityManager em;
+    @Autowired org.springframework.transaction.PlatformTransactionManager transactionManager;
 
     @Test
     @Transactional
@@ -30,7 +31,7 @@ class DemoCleanupIntegrationTest {
         em.persist(district);
         em.flush();
         var customUuid = district.getUuid();
-        new DemoDataCleanup(em).run();
+        new DemoDataCleanup(em, transactionManager).run();
         em.flush();
         assertThat(em.createQuery("select count(g) from Group g", Long.class).getSingleResult()).isZero();
         assertThat(em.createQuery("select count(c) from Convicted c", Long.class).getSingleResult()).isZero();
@@ -39,5 +40,26 @@ class DemoCleanupIntegrationTest {
             .extracting(User::getUuid).containsExactly(DevelopmentData.mockUuid(100));
         assertThat(em.createQuery("select d.uuid from JudicialDistrict d", java.util.UUID.class).getResultList())
             .containsExactlyInAnyOrder(DevelopmentData.mockUuid(1), customUuid);
+    }
+
+    @Test
+    @Transactional
+    void preservesDemoProcessReferencedByCustomConvicted() {
+        var process = em.createQuery("select p from JudicialProcess p where p.uuid = :uuid", JudicialProcess.class)
+            .setParameter("uuid", DevelopmentData.mockUuid(200)).getSingleResult();
+        var custom = new Convicted("Custom record", br.com.sicape.api.domain.valueobject.Cpf.of("11144477735"),
+            null, null, new br.com.sicape.api.domain.valueobject.Address("01001000", "Test street", "1", null,
+                "Test neighborhood", "Test city", "SP"),
+            br.com.sicape.api.domain.enums.EmploymentStatus.UNEMPLOYED, process.getDistrict());
+        em.persist(custom);
+        em.persist(new ConvictedProcess(custom, process, true));
+        em.flush();
+        var customUuid = custom.getUuid();
+        new DemoDataCleanup(em, transactionManager).run();
+        em.flush();
+        assertThat(em.createQuery("select count(c) from Convicted c where c.uuid = :uuid", Long.class)
+            .setParameter("uuid", customUuid).getSingleResult()).isEqualTo(1);
+        assertThat(em.createQuery("select count(p) from JudicialProcess p where p.uuid = :uuid", Long.class)
+            .setParameter("uuid", process.getUuid()).getSingleResult()).isEqualTo(1);
     }
 }
