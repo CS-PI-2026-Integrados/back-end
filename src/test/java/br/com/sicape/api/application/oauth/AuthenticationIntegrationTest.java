@@ -157,7 +157,14 @@ class AuthenticationIntegrationTest {
 
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> createSessionUseCase.execute(
             new CreateSessionRequest(CPF, PASSWORD)
-        )).isInstanceOf(br.com.sicape.api.domain.exception.ForbiddenException.class)
-          .hasMessageContaining("Usuário inativo. Procure o administrador.");
+        )).isInstanceOf(br.com.sicape.api.domain.exception.InvalidCredentialsException.class)
+          .hasMessageContaining("Credenciais inválidas");
+    }
+
+    @Test
+    void malformedRefreshTokenReturnsInvalidCredentials() {
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> refreshSessionUseCase.execute(
+            new RefreshSessionRequest("invalid-token")))
+            .isInstanceOf(br.com.sicape.api.domain.exception.InvalidCredentialsException.class);
     }
 }

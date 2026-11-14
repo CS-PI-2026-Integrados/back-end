@@ -22,15 +22,23 @@ public class RefreshSessionUseCase {
 
     public RefreshSessionResponse execute(RefreshSessionRequest request) {
 
-        Claims claims = oauthJwtService
-            .parse(request.refreshToken())
-            .getPayload();
+        Claims claims;
+        try {
+            claims = oauthJwtService.parse(request.refreshToken()).getPayload();
+        } catch (io.jsonwebtoken.JwtException | IllegalArgumentException exception) {
+            throw new InvalidCredentialsException();
+        }
 
         if (!"refresh".equals(claims.get("type"))) {
             throw new InvalidCredentialsException();
         }
 
-        UUID sessionUuid = UUID.fromString(claims.getId());
+        UUID sessionUuid;
+        try {
+            sessionUuid = UUID.fromString(claims.getId());
+        } catch (IllegalArgumentException | NullPointerException exception) {
+            throw new InvalidCredentialsException();
+        }
 
         Optional<Session> optionalSession =
             sessionRepository.findByUuid(sessionUuid);
@@ -41,7 +49,7 @@ public class RefreshSessionUseCase {
 
         Session session = optionalSession.get();
 
-        if (session.isRevoked()) {
+        if (session.isRevoked() || !session.getUser().isActive()) {
             throw new InvalidCredentialsException();
         }
 

@@ -4,6 +4,7 @@ import java.util.UUID;
 
 import br.com.sicape.api.application.common.dto.response.AddressResponse;
 import br.com.sicape.api.domain.enums.EmploymentStatus;
+import br.com.sicape.api.domain.enums.ConvictedStatus;
 
 public record ConvictedListItemResponse(
     UUID id,
@@ -13,5 +14,6 @@ public record ConvictedListItemResponse(
     AddressResponse address,
     EmploymentStatus employmentStatus,
     String mainProcessNumber,
-    long sameProcessConvictedCount
+    long sameProcessConvictedCount,
+    ConvictedStatus status
 ) {}

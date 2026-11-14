@@ -24,10 +24,12 @@ public class CreateSessionUseCase {
     private final SessionRepository sessionRepository;
     private final PasswordEncoder passwordEncoder;
     private final OauthJwtService oauthJwtService;
+    private final br.com.sicape.api.application.oauth.LoginAttemptLimiter attempts;
 
     @Transactional
     public CreateSessionResponse execute(CreateSessionRequest request)
     {
+        attempts.check(request.clientId().value());
         Optional<User> optionalUser = userRepository.findByCpf(request.clientId());
 
         if (optionalUser.isEmpty()) {
@@ -37,7 +39,7 @@ public class CreateSessionUseCase {
         User user = optionalUser.get();
 
         if (!user.isActive()) {
-            throw new br.com.sicape.api.domain.exception.ForbiddenException("Usuário inativo. Procure o administrador.");
+            throw new InvalidCredentialsException();
         }
         
         if (!passwordEncoder.matches(request.clientSecret(), user.getPasswordHash())) {

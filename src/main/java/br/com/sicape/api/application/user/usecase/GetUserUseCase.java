@@ -31,6 +31,10 @@ public class GetUserUseCase {
         User user = userRepository.findByUuid(id)
             .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado."));
 
+        if (!user.getDistrict().getUuid().equals(authContext.user().getDistrict().getUuid())) {
+            throw new ResourceNotFoundException("Usuário não encontrado.");
+        }
+
         return userResponseMapper.toResponse(user);
     }
 }

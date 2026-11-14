@@ -24,6 +24,7 @@ public class UpdateUserUseCase {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserResponseMapper mapper;
+    private final br.com.sicape.api.domain.repository.SessionRepository sessions;
 
     @Transactional
     public UserResponse execute(UUID id, UpdateUserRequest request, AuthContext authContext) {
@@ -33,6 +34,10 @@ public class UpdateUserUseCase {
 
         User targetUser = userRepository.findByUuid(id)
             .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado."));
+
+        if (!targetUser.getDistrict().getUuid().equals(authContext.user().getDistrict().getUuid())) {
+            throw new ResourceNotFoundException("Usuário não encontrado.");
+        }
 
         // Bloqueia se o usuário estiver tentando alterar a própria role
         if (authContext.user().getUuid().equals(targetUser.getUuid()) && request.role() != targetUser.getRole()) {
@@ -50,6 +55,7 @@ public class UpdateUserUseCase {
 
         if (request.password() != null && !request.password().isBlank()) {
             targetUser.setPasswordHash(passwordEncoder.encode(request.password()));
+            sessions.revokeByUserUuid(targetUser.getUuid());
         }
 
         return mapper.toResponse(userRepository.save(targetUser));

@@ -82,6 +82,9 @@ class UserIntegrationTest {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private br.com.sicape.api.application.oauth.ChangePasswordUseCase changePasswordUseCase;
+
     private JudicialDistrict district;
     private User adminUser;
     private User operatorUser;
@@ -125,6 +128,42 @@ class UserIntegrationTest {
         judicialProcessRepository.deleteAll();
         userRepository.deleteAll();
         judicialDistrictRepository.deleteAll();
+    }
+
+    @Test
+    void administratorCannotReadModifyOrDeleteAnotherDistrictUser() {
+        JudicialDistrict foreignDistrict = new JudicialDistrict();
+        foreignDistrict.setName("Outra comarca");
+        judicialDistrictRepository.save(foreignDistrict);
+        operatorUser.setDistrict(foreignDistrict);
+        userRepository.save(operatorUser);
+        AuthContext auth = new AuthContext(adminUser, district, null);
+        assertThat(listUsersUseCase.execute(null, 0, 20, auth).content())
+            .extracting(UserResponse::id).containsExactly(adminUser.getUuid());
+        assertThatThrownBy(() -> getUserUseCase.execute(operatorUser.getUuid(), auth))
+            .isInstanceOf(br.com.sicape.api.domain.exception.ResourceNotFoundException.class);
+        assertThatThrownBy(() -> updateUserUseCase.execute(operatorUser.getUuid(),
+            new UpdateUserRequest("Outro", operatorUser.getEmail(), null, UserRole.OPERATOR), auth))
+            .isInstanceOf(br.com.sicape.api.domain.exception.ResourceNotFoundException.class);
+        assertThatThrownBy(() -> deleteUserUseCase.execute(operatorUser.getUuid(), auth))
+            .isInstanceOf(br.com.sicape.api.domain.exception.ResourceNotFoundException.class);
+        assertThat(userRepository.findByUuid(operatorUser.getUuid()).orElseThrow().isActive()).isTrue();
+    }
+
+    @Test
+    void passwordChangeRequiresCurrentPasswordAndRevokesExistingSessions() {
+        var session = new br.com.sicape.api.domain.entity.Session();
+        session.setUser(operatorUser);
+        session.setExpiresAt(java.time.Instant.now().plusSeconds(3600));
+        sessionRepository.save(session);
+        AuthContext auth = new AuthContext(operatorUser, district, session);
+        assertThatThrownBy(() -> changePasswordUseCase.execute(auth, "wrong", "ReplacementPass123!"))
+            .isInstanceOf(br.com.sicape.api.domain.exception.InvalidCredentialsException.class);
+        assertThat(sessionRepository.findByUuid(session.getUuid()).orElseThrow().isRevoked()).isFalse();
+        changePasswordUseCase.execute(auth, "OperPass123", "ReplacementPass123!");
+        var saved = userRepository.findByUuid(operatorUser.getUuid()).orElseThrow();
+        assertThat(passwordEncoder.matches("ReplacementPass123!", saved.getPasswordHash())).isTrue();
+        assertThat(sessionRepository.findByUuid(session.getUuid()).orElseThrow().isRevoked()).isTrue();
     }
 
     @Test

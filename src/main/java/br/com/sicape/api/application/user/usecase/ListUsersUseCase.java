@@ -33,7 +33,7 @@ public class ListUsersUseCase {
         }
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("name").ascending());
-        Page<User> usersPage = userRepository.searchUsers(search, pageable);
+        Page<User> usersPage = userRepository.searchUsers(search, authContext.user().getDistrict().getUuid(), pageable);
 
         List<UserResponse> content = usersPage.getContent().stream()
             .map(userResponseMapper::toResponse)

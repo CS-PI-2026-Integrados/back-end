@@ -28,6 +28,10 @@ public class DeleteUserUseCase {
         User targetUser = userRepository.findByUuid(id)
             .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado."));
 
+        if (!targetUser.getDistrict().getUuid().equals(authContext.user().getDistrict().getUuid())) {
+            throw new ResourceNotFoundException("Usuário não encontrado.");
+        }
+
         if (authContext.user().getUuid().equals(targetUser.getUuid())) {
             throw new ForbiddenException("Você não pode remover seu próprio usuário.");
         }

@@ -74,7 +74,8 @@ public class ListConvictedUseCase {
                 AddressResponse.from(convicted.getAddress()),
                 convicted.getEmploymentStatus(),
                 main == null ? null : main.getProcess().getNumber(),
-                main == null ? 0 : counts.getOrDefault(main.getProcess().getUuid(), 0L)
+                main == null ? 0 : counts.getOrDefault(main.getProcess().getUuid(), 0L),
+                convicted.getStatus()
             );
         }).toList();
 

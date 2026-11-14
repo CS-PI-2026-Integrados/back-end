@@ -17,9 +17,10 @@ public interface UserRepository extends BaseRepository<User> {
     boolean existsByEmail(String email);
     boolean existsByEmailAndUuidNot(String email, java.util.UUID uuid);
 
-    @Query("SELECT u FROM User u WHERE " +
+    @Query("SELECT u FROM User u WHERE u.district.uuid = :districtUuid AND " +
            "(:searchTerm IS NULL OR " +
            "LOWER(u.name) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
            "LOWER(u.email) LIKE LOWER(CONCAT('%', :searchTerm, '%')))")
-    Page<User> searchUsers(@Param("searchTerm") String searchTerm, Pageable pageable);
+    Page<User> searchUsers(@Param("searchTerm") String searchTerm,
+        @Param("districtUuid") java.util.UUID districtUuid, Pageable pageable);
 }
