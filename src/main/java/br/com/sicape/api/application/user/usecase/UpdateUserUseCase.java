@@ -31,7 +31,7 @@ public class UpdateUserUseCase {
             throw new ForbiddenException("Apenas administradores podem atualizar usuários.");
         }
 
-        User targetUser = userRepository.findByUuid(id)
+        User targetUser = userRepository.findByUuidAndDistrict(id, authContext.district())
             .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado."));
 
         // Bloqueia se o usuário estiver tentando alterar a própria role

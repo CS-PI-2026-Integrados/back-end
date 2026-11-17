@@ -1,12 +1,14 @@
 package br.com.sicape.api.domain.repository;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import br.com.sicape.api.domain.entity.JudicialDistrict;
 import br.com.sicape.api.domain.entity.User;
 import br.com.sicape.api.domain.valueobject.Cpf;
 
@@ -22,4 +24,6 @@ public interface UserRepository extends BaseRepository<User> {
            "LOWER(u.name) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
            "LOWER(u.email) LIKE LOWER(CONCAT('%', :searchTerm, '%')))")
     Page<User> searchUsers(@Param("searchTerm") String searchTerm, Pageable pageable);
+
+    Optional<User> findByUuidAndDistrict(UUID uuid, JudicialDistrict JudicialDistrict);
 }
