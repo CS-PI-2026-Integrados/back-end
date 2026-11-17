@@ -21,7 +21,7 @@ public class GetUserUseCase {
 
     private final UserRepository userRepository;
     private final UserResponseMapper userResponseMapper;
-]
+
     @Transactional(readOnly = true)
     public UserResponse execute(UUID id, AuthContext authContext) {
         if (authContext == null || authContext.user() == null || authContext.user().getRole() != UserRole.ADMIN) {
