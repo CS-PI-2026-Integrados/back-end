@@ -19,4 +19,9 @@ public class GroupFinder {
         return repository.findByUuidAndDistrict(uuid, authContext.district())
             .orElseThrow(() -> new ResourceNotFoundException("Grupo reflexivo não encontrado."));
     }
+
+    public Group findForUpdate(UUID uuid, AuthContext authContext) {
+        return repository.findForUpdateByUuidAndDistrict(uuid, authContext.district())
+            .orElseThrow(() -> new ResourceNotFoundException("Grupo reflexivo não encontrado."));
+    }
 }

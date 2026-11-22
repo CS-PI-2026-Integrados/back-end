@@ -22,7 +22,7 @@ public class DeleteGroupUseCase {
     @Transactional
     public void execute(UUID groupUuid, AuthContext authContext) {
         validatePermission(authContext);
-        Group group = groupFinder.find(groupUuid, authContext);
+        Group group = groupFinder.findForUpdate(groupUuid, authContext);
         group.setDeleted(true);
         groupRepository.save(group);
     }

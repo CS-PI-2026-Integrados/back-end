@@ -8,8 +8,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import br.com.sicape.api.application.group.dto.request.UpdateGroupRequest;
+import br.com.sicape.api.application.group.dto.response.GroupParticipantMembershipResponse;
 import br.com.sicape.api.application.group.dto.response.GroupResponse;
 import br.com.sicape.api.application.group.service.GroupFinder;
+import br.com.sicape.api.application.group.service.GroupParticipantMembershipService;
 import br.com.sicape.api.application.oauth.AuthContext;
 import br.com.sicape.api.domain.entity.Group;
 import br.com.sicape.api.domain.enums.GroupStatus;
@@ -25,12 +27,14 @@ import lombok.RequiredArgsConstructor;
 public class UpdateGroupUseCase {
     private final GroupFinder groupFinder;
     private final GroupRepository groupRepository;
+    private final GroupParticipantMembershipService membershipService;
 
     @Transactional
     public GroupResponse execute(UUID groupUuid, UpdateGroupRequest request, AuthContext authContext) {
         validatePermission(authContext);
-        Group group = groupFinder.find(groupUuid, authContext);
+        Group group = groupFinder.findForUpdate(groupUuid, authContext);
         validateRequest(request, group);
+        var previousStartDate = group.getStartDate();
 
         if (request.isNameProvided()) {
             group.setName(request.getName());
@@ -52,9 +56,18 @@ public class UpdateGroupUseCase {
         }
         if (request.isStartDateProvided()) {
             group.setStartDate(request.getStartDate());
+            membershipService.rescheduleInitialMemberships(
+                group,
+                previousStartDate,
+                request.getStartDate()
+            );
         }
 
-        return GroupResponse.from(groupRepository.save(group));
+        groupRepository.save(group);
+        var memberships = membershipService.getAndBackfill(group).stream()
+            .map(GroupParticipantMembershipResponse::from)
+            .toList();
+        return GroupResponse.from(group, memberships);
     }
 
     private void validatePermission(AuthContext authContext) {
@@ -99,6 +112,10 @@ public class UpdateGroupUseCase {
 
         if (request.isStatusProvided() && request.getStatus() == null) {
             violations.add(new FieldViolation("status", "O status do grupo não pode ser nulo"));
+        }
+
+        if (request.isStartDateProvided() && request.getStartDate() == null) {
+            violations.add(new FieldViolation("start_date", "A data de início do grupo não pode ser nula"));
         }
 
         if (request.isStartDateProvided() && group.getStatus() != GroupStatus.PLANNED) {
