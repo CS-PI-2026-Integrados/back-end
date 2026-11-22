@@ -1,18 +1,24 @@
 package br.com.sicape.api.application.group.usecase;
 
 import java.time.LocalTime;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import br.com.sicape.api.application.group.dto.request.CreateGroupRequest;
 import br.com.sicape.api.application.group.dto.response.GroupResponse;
+import br.com.sicape.api.application.group.dto.response.GroupParticipantMembershipResponse;
+import br.com.sicape.api.application.group.service.GroupParticipantMembershipService;
 import br.com.sicape.api.application.oauth.AuthContext;
 import br.com.sicape.api.domain.entity.Convicted;
 import br.com.sicape.api.domain.entity.Group;
 import br.com.sicape.api.domain.enums.GroupStatus;
+import br.com.sicape.api.domain.enums.ConvictedStatus;
 import br.com.sicape.api.domain.enums.UserRole;
 import br.com.sicape.api.domain.exception.ForbiddenException;
 import br.com.sicape.api.domain.exception.ValidationException;
@@ -23,9 +29,12 @@ import lombok.RequiredArgsConstructor;
 @Service 
 @RequiredArgsConstructor 
 public class CreateGroupUseCase {
+    private static final ZoneId BUSINESS_ZONE = ZoneId.of("America/Sao_Paulo");
     private final GroupRepository repo;
     private final ConvictedRepository convictedRepository;
+    private final GroupParticipantMembershipService membershipService;
 
+    @Transactional
     public GroupResponse execute(
         CreateGroupRequest request,
         AuthContext auth
@@ -41,8 +50,12 @@ public class CreateGroupUseCase {
         List<Convicted> convicteds = List.of();
         if (!uniqueIds.isEmpty()) {
             convicteds = convictedRepository.findAllByUuidInAndDistrict(uniqueIds, auth.district());
-            if (convicteds.size() != uniqueIds.size()) {
-                throw new ValidationException("convictedUuids", "Um ou mais apenados não existem nesta comarca");
+            if (convicteds.size() != uniqueIds.size()
+                || convicteds.stream().anyMatch(convicted -> convicted.getStatus() != ConvictedStatus.ACTIVE)) {
+                throw new ValidationException(
+                    "convictedUuids",
+                    "Um ou mais apenados não existem ou não estão ativos nesta comarca"
+                );
             }
         }
 
@@ -64,7 +77,15 @@ public class CreateGroupUseCase {
 
         repo.save(group);
 
-        return GroupResponse.from(group);
+        var memberships = convicteds.stream()
+            .map(convicted -> membershipService.start(
+                group,
+                convicted,
+                group.getStartDate() == null ? LocalDate.now(BUSINESS_ZONE) : group.getStartDate()
+            ))
+            .map(GroupParticipantMembershipResponse::from)
+            .toList();
+        return GroupResponse.from(group, memberships);
     }
 
     private void validatePermission(AuthContext auth) {

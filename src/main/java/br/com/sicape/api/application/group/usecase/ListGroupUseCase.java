@@ -1,5 +1,8 @@
 package br.com.sicape.api.application.group.usecase;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -12,10 +15,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import br.com.sicape.api.application.common.dto.response.PageResponse;
 import br.com.sicape.api.application.group.dto.response.GroupListItemResponse;
+import br.com.sicape.api.application.group.dto.response.GroupParticipantPreviewResponse;
 import br.com.sicape.api.application.oauth.AuthContext;
 import br.com.sicape.api.domain.entity.Group;
 import br.com.sicape.api.domain.enums.GroupStatus;
 import br.com.sicape.api.domain.repository.GroupParticipantCount;
+import br.com.sicape.api.domain.repository.GroupParticipantPreview;
 import br.com.sicape.api.domain.repository.GroupRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -52,6 +57,25 @@ public class ListGroupUseCase {
                     GroupParticipantCount::getParticipantCount
                 ));
 
+        Map<UUID, List<GroupParticipantPreviewResponse>> participantPreviews = new HashMap<>();
+        if (!result.getContent().isEmpty()) {
+            List<UUID> groupUuids = result.getContent().stream()
+                .map(Group::getUuid)
+                .toList();
+            for (GroupParticipantPreview participant : repository.findParticipantPreviewsByGroupUuids(groupUuids)) {
+                List<GroupParticipantPreviewResponse> previews = participantPreviews.computeIfAbsent(
+                    participant.getGroupUuid(),
+                    ignored -> new ArrayList<>(3)
+                );
+                if (previews.size() < 3) {
+                    previews.add(new GroupParticipantPreviewResponse(
+                        participant.getParticipantUuid(),
+                        participant.getParticipantName()
+                    ));
+                }
+            }
+        }
+
         return new PageResponse<>(
             result.getContent().stream().map(group -> new GroupListItemResponse(
                 group.getUuid(),
@@ -59,7 +83,8 @@ public class ListGroupUseCase {
                 group.getSubject(),
                 group.getPresenters() == null ? java.util.List.of() : java.util.List.copyOf(group.getPresenters()),
                 group.getStatus(),
-                participantCounts.getOrDefault(group.getUuid(), 0L)
+                participantCounts.getOrDefault(group.getUuid(), 0L),
+                participantPreviews.getOrDefault(group.getUuid(), List.of())
             )).toList(),
             result.getNumber(),
             result.getSize(),
