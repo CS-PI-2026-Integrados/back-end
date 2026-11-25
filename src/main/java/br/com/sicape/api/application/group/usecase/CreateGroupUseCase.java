@@ -3,6 +3,7 @@ package br.com.sicape.api.application.group.usecase;
 import java.time.LocalTime;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.UUID;
@@ -62,14 +63,18 @@ public class CreateGroupUseCase {
         Group group = new Group();
 
         group.setName(request.name());
-        group.setDescription(request.description());
+        group.setDescription(request.description() == null || request.description().isBlank() ? null : request.description());
         group.setSubject(request.subject());
         group.setPresenters(new ArrayList<>(request.presenters()));
         group.setStatus(GroupStatus.PLANNED);
         group.setMinimumMeetingsCount(request.minimumMeetingsCount());
         group.setTotalMeetingsCounts(request.totalMeetingsCount());
         group.setFrequency(request.frequency());
-        group.setMeetingBaseTime(request.meetingBaseTime() == null ? null : LocalTime.parse(request.meetingBaseTime()));
+        group.setMeetingBaseTime(
+            request.meetingBaseTime() == null
+                ? null
+                : LocalTime.parse(request.meetingBaseTime(), DateTimeFormatter.ofPattern("H:mm"))
+        );
         group.setStartDate(request.startDate());
         group.setPredictedEndDate(request.predictedEndDate());
         group.setConvicteds(convicteds);

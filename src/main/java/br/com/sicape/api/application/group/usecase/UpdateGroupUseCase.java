@@ -1,5 +1,7 @@
 package br.com.sicape.api.application.group.usecase;
 
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -40,7 +42,11 @@ public class UpdateGroupUseCase {
             group.setName(request.getName());
         }
         if (request.isDescriptionProvided()) {
-            group.setDescription(request.getDescription());
+            group.setDescription(
+                request.getDescription() == null || request.getDescription().isBlank()
+                    ? null
+                    : request.getDescription()
+            );
         }
         if (request.isSubjectProvided()) {
             group.setSubject(request.getSubject());
@@ -60,6 +66,13 @@ public class UpdateGroupUseCase {
                 group,
                 previousStartDate,
                 request.getStartDate()
+            );
+        }
+        if (request.isMeetingBaseTimeProvided()) {
+            group.setMeetingBaseTime(
+                request.getMeetingBaseTime() == null
+                    ? null
+                    : LocalTime.parse(request.getMeetingBaseTime(), DateTimeFormatter.ofPattern("H:mm"))
             );
         }
 
@@ -94,10 +107,6 @@ public class UpdateGroupUseCase {
 
         if (request.isNameProvided() && (request.getName() == null || request.getName().isBlank())) {
             violations.add(new FieldViolation("name", "O nome do grupo não pode estar vazio"));
-        }
-
-        if (request.isDescriptionProvided() && (request.getDescription() == null || request.getDescription().isBlank())) {
-            violations.add(new FieldViolation("description", "A descrição do grupo não pode estar vazia"));
         }
 
         if (request.isSubjectProvided() && (request.getSubject() == null || request.getSubject().isBlank())) {

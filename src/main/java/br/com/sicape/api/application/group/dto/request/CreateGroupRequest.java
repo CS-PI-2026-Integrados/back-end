@@ -18,7 +18,6 @@ public record CreateGroupRequest(
     @NotBlank(message = "O nome do grupo é obrigatório")
     String name,
 
-    @NotBlank(message = "A descrição do grupo é obrigatória")
     String description,
 
     @NotBlank(message = "O tema do grupo é obrigatório")
@@ -35,7 +34,6 @@ public record CreateGroupRequest(
     @Min(value = 1, message = "A quantidade mínima de encontros deve ser maior que zero")
     Integer minimumMeetingsCount,
 
-    @NotBlank(message = "A  hora da reunião é obrigatória")
     @Pattern(
         regexp = "^([01]?\\d|2[0-3]):[0-5]\\d$",
         message = "A hora da reunião deve estar no formato H:i"

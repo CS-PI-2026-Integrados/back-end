@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 import br.com.sicape.api.domain.enums.GroupStatus;
+import jakarta.validation.constraints.Pattern;
 
 public class UpdateGroupRequest {
     private String name;
@@ -34,6 +35,14 @@ public class UpdateGroupRequest {
     private LocalDate startDate;
 
     private boolean startDateProvided;
+
+    @Pattern(
+        regexp = "^([01]?\\d|2[0-3]):[0-5]\\d$",
+        message = "A hora da reunião deve estar no formato H:i"
+    )
+    private String meetingBaseTime;
+    private boolean meetingBaseTimeProvided;
+
     private final Set<String> unsupportedFields = new LinkedHashSet<>();
 
     public String getName() {
@@ -127,9 +136,22 @@ public class UpdateGroupRequest {
         return startDateProvided;
     }
 
+    public String getMeetingBaseTime() {
+        return meetingBaseTime;
+    }
+
+    public void setMeetingBaseTime(String meetingBaseTime) {
+        this.meetingBaseTime = meetingBaseTime;
+        this.meetingBaseTimeProvided = true;
+    }
+
+    public boolean isMeetingBaseTimeProvided() {
+        return meetingBaseTimeProvided;
+    }
+
     public boolean hasChanges() {
         return nameProvided || descriptionProvided || subjectProvided || presentersProvided || predictedEndDateProvided
-            || statusProvided || startDateProvided;
+            || statusProvided || startDateProvided || meetingBaseTimeProvided;
     }
 
     public Set<String> getUnsupportedFields() {
