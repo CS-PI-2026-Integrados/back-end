@@ -28,7 +28,7 @@ public record ConvictedResponse(
             convicted.getName(),
             convicted.getCpf().masked(),
             convicted.getBirthDate(),
-            convicted.getPhone().value(),
+            convicted.getPhone() == null ? null : convicted.getPhone().value(),
             AddressResponse.from(convicted.getAddress()),
             convicted.getEmploymentStatus(),
             convicted.getStatus(),
