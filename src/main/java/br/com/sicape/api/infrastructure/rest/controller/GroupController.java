@@ -1,5 +1,6 @@
 package br.com.sicape.api.infrastructure.rest.controller;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
@@ -17,15 +18,20 @@ import org.springframework.web.bind.annotation.RestController;
 
 import br.com.sicape.api.application.common.dto.response.PageResponse;
 import br.com.sicape.api.application.group.dto.request.CreateGroupRequest;
+import br.com.sicape.api.application.group.dto.request.GroupMeetingSyncItemRequest;
 import br.com.sicape.api.application.group.dto.request.UpdateGroupRequest;
 import br.com.sicape.api.application.group.dto.response.GroupListItemResponse;
+import br.com.sicape.api.application.group.dto.response.GroupMeetingResponse;
 import br.com.sicape.api.application.group.dto.response.GroupResponse;
 import br.com.sicape.api.application.group.usecase.CreateGroupUseCase;
 import br.com.sicape.api.application.group.usecase.DeleteGroupUseCase;
 import br.com.sicape.api.application.group.usecase.GetGroupUseCase;
+import br.com.sicape.api.application.group.usecase.ImportGroupMeetingsUseCase;
+import br.com.sicape.api.application.group.usecase.ListGroupMeetingsUseCase;
 import br.com.sicape.api.application.group.usecase.ListGroupUseCase;
 import br.com.sicape.api.application.group.usecase.AddConvictedToGroupUseCase;
 import br.com.sicape.api.application.group.usecase.RemoveConvictedFromGroupUseCase;
+import br.com.sicape.api.application.group.usecase.SyncGroupMeetingsUseCase;
 import br.com.sicape.api.application.group.usecase.UpdateGroupUseCase;
 import br.com.sicape.api.application.oauth.AuthContext;
 import br.com.sicape.api.domain.enums.GroupStatus;
@@ -46,6 +52,9 @@ public class GroupController {
     private final RemoveConvictedFromGroupUseCase removeConvictedUseCase;
     private final UpdateGroupUseCase updateUseCase;
     private final DeleteGroupUseCase deleteUseCase;
+    private final ListGroupMeetingsUseCase listMeetingsUseCase;
+    private final SyncGroupMeetingsUseCase syncMeetingsUseCase;
+    private final ImportGroupMeetingsUseCase importMeetingsUseCase;
 
     @GetMapping
     public PageResponse<GroupListItemResponse> list(
@@ -106,6 +115,32 @@ public class GroupController {
         return ResponseEntity.noContent().build();
     }
     
+    @GetMapping("/{groupId}/meetings")
+    public List<GroupMeetingResponse> listMeetings(
+        @PathVariable UUID groupId,
+        @AuthenticationPrincipal AuthContext auth
+    ) {
+        return listMeetingsUseCase.execute(groupId, auth);
+    }
+
+    @PutMapping("/{groupId}/meetings")
+    public List<GroupMeetingResponse> syncMeetings(
+        @PathVariable UUID groupId,
+        @Valid @RequestBody List<GroupMeetingSyncItemRequest> request,
+        @AuthenticationPrincipal AuthContext auth
+    ) {
+        return syncMeetingsUseCase.execute(groupId, request, auth);
+    }
+
+    @PostMapping("/{groupId}/meetings/import")
+    public List<GroupMeetingResponse> importMeetings(
+        @PathVariable UUID groupId,
+        @Valid @RequestBody List<GroupMeetingSyncItemRequest> request,
+        @AuthenticationPrincipal AuthContext auth
+    ) {
+        return importMeetingsUseCase.execute(groupId, request, auth);
+    }
+
     @PostMapping
     public ResponseEntity<GroupResponse> create(
         @Valid
