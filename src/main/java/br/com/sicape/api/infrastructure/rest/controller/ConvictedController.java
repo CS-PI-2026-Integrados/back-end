@@ -2,8 +2,11 @@ package br.com.sicape.api.infrastructure.rest.controller;
 
 import java.io.IOException;
 import java.net.URI;
+import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.CacheControl;
@@ -25,12 +28,14 @@ import br.com.sicape.api.application.convicted.dto.response.ConvictedCpfResponse
 import br.com.sicape.api.application.convicted.dto.response.ConvictedListItemResponse;
 import br.com.sicape.api.application.convicted.dto.response.ConvictedResponse;
 import br.com.sicape.api.application.convicted.dto.response.ConvictedMetricsResponse;
+import br.com.sicape.api.application.convicted.schedule.ConvictedScheduleEvent;
 import br.com.sicape.api.application.convicted.usecase.GetConvictedMetricsUseCase;
 import br.com.sicape.api.application.common.dto.response.PageResponse;
 import br.com.sicape.api.application.convicted.usecase.CreateConvictedUseCase;
 import br.com.sicape.api.application.convicted.usecase.GetConvictedCpfUseCase;
 import br.com.sicape.api.application.convicted.usecase.GetConvictedPhotoUseCase;
 import br.com.sicape.api.application.convicted.usecase.GetConvictedUseCase;
+import br.com.sicape.api.application.convicted.usecase.GetConvictedScheduleUseCase;
 import br.com.sicape.api.application.convicted.usecase.ListConvictedUseCase;
 import br.com.sicape.api.application.convicted.usecase.UpdateConvictedStatusUseCase;
 import br.com.sicape.api.application.convicted.usecase.UpdateConvictedPhotoUseCase;
@@ -50,6 +55,7 @@ public class ConvictedController {
     private final CreateConvictedUseCase createUseCase;
     private final ListConvictedUseCase listUseCase;
     private final GetConvictedUseCase getUseCase;
+    private final GetConvictedScheduleUseCase getScheduleUseCase;
     private final GetConvictedCpfUseCase getCpfUseCase;
     private final UpdateConvictedUseCase updateUseCase;
     private final UpdateConvictedStatusUseCase updateStatusUseCase;
@@ -98,6 +104,18 @@ public class ConvictedController {
         return ResponseEntity.ok()
             .cacheControl(CacheControl.noStore())
             .body(getCpfUseCase.execute(uuid, authContext));
+    }
+
+    @GetMapping("/{uuid}/schedule")
+    public ResponseEntity<List<ConvictedScheduleEvent>> getSchedule(
+        @PathVariable UUID uuid,
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+        @AuthenticationPrincipal AuthContext auth
+    ) {
+        return ResponseEntity.ok()
+            .cacheControl(CacheControl.noStore())
+            .body(getScheduleUseCase.execute(uuid, from, to, auth));
     }
 
     @PutMapping("/{uuid}")
