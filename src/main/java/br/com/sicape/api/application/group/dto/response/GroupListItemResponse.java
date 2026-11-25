@@ -11,5 +11,6 @@ public record GroupListItemResponse(
     String subject,
     List<String> presenters,
     GroupStatus status,
-    long participantCount
+    long participantCount,
+    List<GroupParticipantPreviewResponse> participants
 ) {}

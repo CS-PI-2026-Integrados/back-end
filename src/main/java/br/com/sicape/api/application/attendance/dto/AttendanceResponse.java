@@ -29,7 +29,7 @@ public record AttendanceResponse(
             attendance.getConvicted().getUuid(),
             process == null ? null : process.getUuid(),
             AddressResponse.from(attendance.getAddress()),
-            attendance.getPhone().value(),
+            attendance.getPhone() == null ? null : attendance.getPhone().value(),
             attendance.getEmploymentStatus(),
             attendance.getUser().getUuid(),
             attendance.getUser().getName(),

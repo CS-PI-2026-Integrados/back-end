@@ -26,9 +26,17 @@ public record GroupResponse(
     LocalDate startDate,
     LocalDate predictedEndDate,
     LocalDate realEndDate,
-    List<GroupConvictedResponse> convicteds
+    List<GroupConvictedResponse> convicteds,
+    List<GroupParticipantMembershipResponse> participantMemberships
 ) {
     public static GroupResponse from(Group group) {
+        return from(group, List.of());
+    }
+
+    public static GroupResponse from(
+        Group group,
+        List<GroupParticipantMembershipResponse> memberships
+    ) {
         return new GroupResponse(
             group.getUuid(),
             group.getCreatedAt(),
@@ -51,7 +59,8 @@ public record GroupResponse(
                     convicted.getName(),
                     convicted.getCpf().masked()
                 ))
-                .toList()
+                .toList(),
+            List.copyOf(memberships)
         );
     }
 }

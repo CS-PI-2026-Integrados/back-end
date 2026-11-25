@@ -44,7 +44,7 @@ public class ListConvictedUseCase {
             status,
             search,
             digits,
-            PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "name"))
+            PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt"), Sort.Order.asc("id")))
         );
 
         Collection<UUID> mainProcessUuids = result.getContent().stream()
@@ -71,7 +71,7 @@ public class ListConvictedUseCase {
                 convicted.getUuid(),
                 convicted.getName(),
                 convicted.getCpf().masked(),
-                convicted.getPhone().value(),
+                convicted.getPhone() == null ? null : convicted.getPhone().value(),
                 AddressResponse.from(convicted.getAddress()),
                 convicted.getEmploymentStatus(),
                 convicted.getStatus(),

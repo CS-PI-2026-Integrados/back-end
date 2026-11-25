@@ -24,6 +24,9 @@ import br.com.sicape.api.domain.exception.DomainException;
 import br.com.sicape.api.domain.exception.ValidationException;
 import br.com.sicape.api.infrastructure.settings.Settings;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.Path;
 
 @RestControllerAdvice
 public class ApiErrorHandler {
@@ -77,6 +80,17 @@ public class ApiErrorHandler {
                 .map(error -> new ApiFieldError(result.getMethodParameter().getParameterName(), error.getDefaultMessage())))
             .toList();
         return buildResponse(HttpStatus.UNPROCESSABLE_ENTITY, "Um ou mais parâmetros são inválidos.", exception, request, fields);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ApiErrorResponse> handleConstraintViolation(
+        ConstraintViolationException exception,
+        HttpServletRequest request
+    ) {
+        List<ApiFieldError> fields = exception.getConstraintViolations().stream()
+            .map(violation -> new ApiFieldError(violationField(violation), violation.getMessage()))
+            .toList();
+        return buildResponse(HttpStatus.UNPROCESSABLE_ENTITY, "Um ou mais campos são inválidos.", exception, request, fields);
     }
 
     @ExceptionHandler({HttpMessageNotReadableException.class, MissingServletRequestPartException.class})
@@ -198,5 +212,15 @@ public class ApiErrorHandler {
 
     private String jsonField(String field) {
         return field.replaceAll("([a-z0-9])([A-Z])", "$1_$2").toLowerCase();
+    }
+
+    private String violationField(ConstraintViolation<?> violation) {
+        String leaf = null;
+        for (Path.Node node : violation.getPropertyPath()) {
+            if (node.getName() != null) {
+                leaf = node.getName();
+            }
+        }
+        return leaf == null ? "request" : jsonField(leaf);
     }
 }

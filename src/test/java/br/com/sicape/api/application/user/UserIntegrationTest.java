@@ -34,6 +34,7 @@ import br.com.sicape.api.domain.entity.User;
 import br.com.sicape.api.domain.enums.UserRole;
 import br.com.sicape.api.domain.exception.ConflictException;
 import br.com.sicape.api.domain.exception.ForbiddenException;
+import br.com.sicape.api.domain.exception.ResourceNotFoundException;
 import br.com.sicape.api.domain.repository.ConvictedRepository;
 import br.com.sicape.api.domain.repository.GroupRepository;
 import br.com.sicape.api.domain.repository.JudicialDistrictRepository;
@@ -105,6 +106,10 @@ class UserIntegrationTest {
     private User adminUser;
     private User operatorUser;
 
+    private JudicialDistrict districtB;
+    private User adminUserB;
+    private User operatorUserB;
+
     @BeforeEach
     void setUp() {
         clearDatabase();
@@ -130,6 +135,28 @@ class UserIntegrationTest {
         operatorUser.setDistrict(district);
         operatorUser.setRole(UserRole.OPERATOR);
         userRepository.save(operatorUser);
+
+        districtB = new JudicialDistrict();
+        districtB.setName("Comarca B");
+        judicialDistrictRepository.save(districtB);
+
+        adminUserB = new User();
+        adminUserB.setName("Administrador B");
+        adminUserB.setCpf(Cpf.of("93541134780"));
+        adminUserB.setEmail("admin.b@sicape.local");
+        adminUserB.setPasswordHash(passwordEncoder.encode("AdminPass123"));
+        adminUserB.setDistrict(districtB);
+        adminUserB.setRole(UserRole.ADMIN);
+        userRepository.save(adminUserB);
+
+        operatorUserB = new User();
+        operatorUserB.setName("Operador B");
+        operatorUserB.setCpf(Cpf.of("11144477735"));
+        operatorUserB.setEmail("operator.b@sicape.local");
+        operatorUserB.setPasswordHash(passwordEncoder.encode("OperPass123"));
+        operatorUserB.setDistrict(districtB);
+        operatorUserB.setRole(UserRole.OPERATOR);
+        userRepository.save(operatorUserB);
     }
 
     @AfterEach
@@ -540,5 +567,61 @@ void shouldUpdateUserSuccessfullyWithPassword()
 
         assertThatThrownBy(() -> deleteUserUseCase.execute(java.util.UUID.randomUUID(), authContext))
             .isInstanceOf(br.com.sicape.api.domain.exception.ResourceNotFoundException.class);
+    }
+
+    @Test
+    void shouldGetUserFromSameDistrictWhenAdmin() {
+        AuthContext authContext = new AuthContext(adminUserB, districtB, null);
+
+        UserResponse response = getUserUseCase.execute(
+            operatorUserB.getUuid(),
+            authContext
+        );
+
+        assertThat(response).isNotNull();
+        assertThat(response.name()).isEqualTo("Operador B");
+        assertThat(response.email()).isEqualTo("operator.b@sicape.local");
+    }
+
+    @Test
+    void shouldNotGetUserFromAnotherDistrictWhenAdmin() {
+        AuthContext authContext = new AuthContext(adminUser, district, null);
+
+        assertThatThrownBy(() ->
+            getUserUseCase.execute(adminUserB.getUuid(), authContext)
+        )
+            .isInstanceOf(ResourceNotFoundException.class)
+            .hasMessageContaining("Usuário não encontrado.");
+    }
+
+    @Test
+    void shouldNotGetUserFromAnotherDistrictWhenAdminFromDistrictB() {
+        AuthContext authContext = new AuthContext(adminUserB, districtB, null);
+
+        assertThatThrownBy(() ->
+            getUserUseCase.execute(adminUser.getUuid(), authContext)
+        )
+            .isInstanceOf(ResourceNotFoundException.class)
+            .hasMessageContaining("Usuário não encontrado.");
+    }
+
+    @Test
+    void shouldRejectGetWhenOperatorFromSameDistrict() {
+        AuthContext authContext = new AuthContext(operatorUser, district, null);
+
+        assertThatThrownBy(() ->
+            getUserUseCase.execute(adminUser.getUuid(), authContext)
+        )
+            .isInstanceOf(ForbiddenException.class);
+    }
+
+    @Test
+    void shouldRejectGetWhenOperatorFromAnotherDistrict() {
+        AuthContext authContext = new AuthContext(operatorUser, district, null);
+
+        assertThatThrownBy(() ->
+            getUserUseCase.execute(adminUserB.getUuid(), authContext)
+        )
+            .isInstanceOf(ForbiddenException.class);
     }
 }

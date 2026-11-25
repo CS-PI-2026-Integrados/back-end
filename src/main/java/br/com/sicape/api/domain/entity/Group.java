@@ -33,7 +33,7 @@ public class Group extends BaseEntity {
     @Column(nullable = false, length = 255)
     private String name;
 
-    @Column(nullable = false, length = 512)
+    @Column(nullable = true, length = 512)
     private String description;
 
     @Column(nullable = false, length = 255)

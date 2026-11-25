@@ -28,7 +28,7 @@ public class GetUserUseCase {
             throw new ForbiddenException("Apenas administradores podem acessar os detalhes de usuários.");
         }
 
-        User user = userRepository.findByUuid(id)
+        User user = userRepository.findByUuidAndDistrict(id, authContext.district())
             .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado."));
 
         return userResponseMapper.toResponse(user);

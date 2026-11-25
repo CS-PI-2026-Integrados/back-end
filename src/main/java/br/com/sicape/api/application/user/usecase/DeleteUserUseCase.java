@@ -25,7 +25,7 @@ public class DeleteUserUseCase {
             throw new ForbiddenException("Apenas administradores podem remover usuários.");
         }
 
-        User targetUser = userRepository.findByUuid(id)
+        User targetUser = userRepository.findByUuidAndDistrict(id, authContext.district())
             .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado."));
 
         if (authContext.user().getUuid().equals(targetUser.getUuid())) {

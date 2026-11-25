@@ -7,9 +7,11 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import jakarta.persistence.LockModeType;
 import br.com.sicape.api.domain.entity.Group;
 import br.com.sicape.api.domain.entity.JudicialDistrict;
 import br.com.sicape.api.domain.enums.GroupStatus;
@@ -48,9 +50,25 @@ public interface GroupRepository extends BaseRepository<Group> {
 		""")
 	List<GroupParticipantCount> countParticipantsByGroupUuids(@Param("groupUuids") List<UUID> groupUuids);
 
-	@EntityGraph(attributePaths = "convicteds")
+	@Query("""
+		select g.uuid as groupUuid, c.uuid as participantUuid, c.name as participantName
+		from Group g join g.convicteds c
+		where g.deleted = false and g.uuid in :groupUuids
+		order by g.uuid, c.name, c.uuid
+		""")
+	List<GroupParticipantPreview> findParticipantPreviewsByGroupUuids(
+		@Param("groupUuids") List<UUID> groupUuids
+	);
+
 	@Query("select g from Group g where g.uuid = :uuid and g.district = :district and g.deleted = false")
 	Optional<Group> findByUuidAndDistrict(
+		@Param("uuid") UUID uuid,
+		@Param("district") JudicialDistrict district
+	);
+
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	@Query("select g from Group g where g.uuid = :uuid and g.district = :district and g.deleted = false")
+	Optional<Group> findForUpdateByUuidAndDistrict(
 		@Param("uuid") UUID uuid,
 		@Param("district") JudicialDistrict district
 	);
