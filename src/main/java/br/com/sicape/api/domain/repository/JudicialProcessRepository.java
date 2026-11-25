@@ -15,6 +15,8 @@ import br.com.sicape.api.domain.entity.JudicialProcess;
 import br.com.sicape.api.domain.enums.ProcessStatus;
 
 public interface JudicialProcessRepository extends BaseRepository<JudicialProcess> {
+    boolean existsByNormalizedNumber(String normalizedNumber);
+
     Optional<JudicialProcess> findByUuidAndDistrictAndStatus(
         UUID uuid, JudicialDistrict district, ProcessStatus status
     );
