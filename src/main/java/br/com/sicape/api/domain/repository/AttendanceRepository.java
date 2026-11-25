@@ -32,37 +32,40 @@ public interface AttendanceRepository extends BaseRepository<Attendance> {
     @EntityGraph(attributePaths = {"photo", "receipt", "convicted", "process", "user"})
     Optional<Attendance> findByUuidAndDistrict(UUID uuid, JudicialDistrict district);
 
-    @EntityGraph(attributePaths = {"convicted", "process", "user"})
+    @EntityGraph(attributePaths = {"convicted", "process", "user", "photo", "receipt"})
     @Query(
         value = """
-            select a from Attendance a
+            select a from Attendance a left join a.process p
             where a.district = :district
+              and (:convictedId is null or a.convicted.uuid = :convictedId)
               and (:start is null or a.createdAt >= :start)
               and (:end is null or a.createdAt < :end)
               and (
                 :search = ''
                 or lower(a.convicted.name) like concat('%', :search, '%')
                 or (:digits <> '' and a.convicted.cpf.value like concat('%', :digits, '%'))
-                or (:digits <> '' and a.process.normalizedNumber like concat('%', :digits, '%'))
-                or lower(a.process.number) like concat('%', :search, '%')
+                or (:digits <> '' and p.normalizedNumber like concat('%', :digits, '%'))
+                or lower(p.number) like concat('%', :search, '%')
               )
             """,
         countQuery = """
-            select count(a) from Attendance a
+            select count(a) from Attendance a left join a.process p
             where a.district = :district
+              and (:convictedId is null or a.convicted.uuid = :convictedId)
               and (:start is null or a.createdAt >= :start)
               and (:end is null or a.createdAt < :end)
               and (
                 :search = ''
                 or lower(a.convicted.name) like concat('%', :search, '%')
                 or (:digits <> '' and a.convicted.cpf.value like concat('%', :digits, '%'))
-                or (:digits <> '' and a.process.normalizedNumber like concat('%', :digits, '%'))
-                or lower(a.process.number) like concat('%', :search, '%')
+                or (:digits <> '' and p.normalizedNumber like concat('%', :digits, '%'))
+                or lower(p.number) like concat('%', :search, '%')
               )
             """
     )
     Page<Attendance> search(
         @Param("district") JudicialDistrict district,
+        @Param("convictedId") UUID convictedId,
         @Param("search") String search,
         @Param("digits") String digits,
         @Param("start") Instant start,
