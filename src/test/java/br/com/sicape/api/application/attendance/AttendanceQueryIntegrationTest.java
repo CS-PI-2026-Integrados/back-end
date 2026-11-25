@@ -118,6 +118,40 @@ class AttendanceQueryIntegrationTest {
     }
 
     @Test
+    void filtersByExactConvictedBeforeCountingAndRetainsHistoryWithoutCurrentLinks() {
+        var convictedId = matching.getConvicted().getUuid();
+        var process = entityManager.find(JudicialProcess.class, matching.getProcess().getId());
+        var homonym = createConvicted("Arthur Morgan", "86288366757", auth);
+        createAttendance(homonym, process, auth, "2026-09-02T12:00:00Z");
+        entityManager.clear();
+
+        var first = listUseCase.execute("Arthur", 2026, 9, 0, 1, auth, convictedId);
+        var second = listUseCase.execute(null, 2026, 9, 1, 1, auth, convictedId);
+
+        assertThat(first.totalElements()).isEqualTo(2);
+        assertThat(first.totalPages()).isEqualTo(2);
+        assertThat(first.content()).extracting(AttendanceResponse::id).containsExactly(latest.getUuid());
+        assertThat(second.content()).extracting(AttendanceResponse::id).containsExactly(matching.getUuid());
+        assertThat(listUseCase.execute("Maria", null, null, 0, 20, auth, convictedId).content()).isEmpty();
+        assertThat(listUseCase.execute(null, null, null, 0, 20, auth, foreign.getConvicted().getUuid()).totalElements())
+            .isZero();
+        assertThat(listUseCase.execute(null, null, null, 0, 20, auth, UUID.randomUUID()).content()).isEmpty();
+
+        var record = first.content().getFirst();
+        assertThat(record.processNumber()).isEqualTo(process.getNumber());
+        assertThat(record.photoAvailable()).isTrue();
+        assertThat(record.receiptIssued()).isFalse();
+
+        var saved = entityManager.find(Attendance.class, latest.getId());
+        saved.completeReceipt(entityManager.persistAndFlush(new MediaAsset(UUID.randomUUID(),
+            UUID.randomUUID().toString(), "application/pdf", 3, MediaAssetKind.RECEIPT)));
+        entityManager.flush();
+        entityManager.clear();
+        assertThat(listUseCase.execute(null, null, null, 0, 1, auth, convictedId).content().getFirst().receiptIssued())
+            .isTrue();
+    }
+
+    @Test
     void getsAttendanceDetailsAndRejectsMissingOrOtherDistrictAttendance() {
         var response = getUseCase.execute(matching.getUuid(), auth);
 
