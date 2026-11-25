@@ -1792,10 +1792,16 @@
                   "value": "{{attendance_search}}",
                   "description": "Busca parcial por nome do apenado, CPF ou número do processo, com ou sem pontuação.",
                   "disabled": true
+                },
+                {
+                  "key": "convictedId",
+                  "value": "{{convicted_uuid}}",
+                  "description": "UUID exato do apenado na comarca da sessão. O filtro vale para a página e o total, inclusive sem vínculo processual atual.",
+                  "disabled": true
                 }
               ]
             },
-            "description": "Lista presenças da comarca autenticada, incluindo o histórico de apenados e processos inativos. Ative search para buscar parcialmente por nome do apenado, CPF ou número do processo. CPF e processo aceitam dígitos com ou sem pontuação. Sem search, ou com search vazio, lista todas as presenças da comarca. Ordenação por criação decrescente. Paginação padrão: page=0, size=20; size de 1 a 100."
+            "description": "Lista presenças da comarca autenticada, incluindo apenados e processos inativos. O filtro opcional convictedId é exato e combinado com search, year e month. A ordenação é por created_at decrescente com desempate pelo ID interno. A página começa em 0 e o tamanho padrão é 20, com limite de 100. Cada registro inclui id (UUID e protocolo do atendimento), process_number quando disponível, receipt_issued e photo_available. Os indicadores descrevem os vínculos das mídias, sem testar o armazenamento. Quando receipt_issued é falso, a presença está registrada e o primeiro GET de /attendance/{uuid}/receipt ainda pode emitir e persistir o PDF. A foto pertence ao atendimento. O CPF completo não é retornado."
           },
           "event": [
             {
