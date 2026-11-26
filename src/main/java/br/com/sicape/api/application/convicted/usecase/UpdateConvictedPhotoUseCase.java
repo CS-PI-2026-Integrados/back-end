@@ -14,6 +14,7 @@ import br.com.sicape.api.domain.entity.Convicted;
 import br.com.sicape.api.domain.entity.MediaAsset;
 import br.com.sicape.api.domain.enums.MediaAssetKind;
 import br.com.sicape.api.domain.repository.ConvictedRepository;
+import br.com.sicape.api.domain.repository.AttendanceRepository;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -23,6 +24,7 @@ public class UpdateConvictedPhotoUseCase {
     private final ConvictedRepository repository;
     private final PhotoValidator photoValidator;
     private final MediaAssetStore media;
+    private final AttendanceRepository attendances;
 
     @Transactional
     public ConvictedResponse execute(
@@ -39,7 +41,7 @@ public class UpdateConvictedPhotoUseCase {
 
         convicted.completePhoto(created);
         repository.saveAndFlush(convicted);
-        if (replaced != null) {
+        if (replaced != null && !attendances.existsByReceiptContextConvictedPhoto(replaced)) {
             media.removeAfterCommit(replaced);
         }
         return ConvictedResponse.from(convicted);

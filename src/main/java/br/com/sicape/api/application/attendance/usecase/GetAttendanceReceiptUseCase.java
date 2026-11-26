@@ -41,9 +41,13 @@ public class GetAttendanceReceiptUseCase {
             log.error("Presença sem referência de foto; attendanceUuid={}", uuid);
             throw new IllegalStateException("A foto vinculada à presença está indisponível.");
         }
-        var convictedPhotoAsset = attendance.getConvicted().getPhoto();
+        var context = attendance.getReceiptContext();
+        if (context == null || !Integer.valueOf(1).equals(context.getVersion())) {
+            throw new ConflictException("Esta presença não possui os dados históricos necessários para emitir o comprovante.");
+        }
+        var convictedPhotoAsset = context.getConvictedPhoto();
         if (convictedPhotoAsset == null) {
-            throw new ConflictException("A foto de cadastro do apenado é obrigatória para emitir o comprovante.");
+            throw new ConflictException("A foto de cadastro na data do atendimento é obrigatória para emitir o comprovante.");
         }
 
         MediaContent attendancePhoto;

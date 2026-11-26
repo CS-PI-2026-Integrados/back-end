@@ -17,7 +17,8 @@ import lombok.NoArgsConstructor;
     @Index(name = "idx_attendance_convicted", columnList = "convicted_id"),
     @Index(name = "idx_attendance_process", columnList = "process_id"),
     @Index(name = "idx_attendance_created_at", columnList = "created_at"),
-    @Index(name = "idx_attendance_district_created_at", columnList = "district_id, created_at")
+    @Index(name = "idx_attendance_district_created_at", columnList = "district_id, created_at"),
+    @Index(name = "idx_attendance_receipt_convicted_photo", columnList = "receipt_convicted_photo_asset_id")
 })
 public class Attendance extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -57,6 +58,9 @@ public class Attendance extends BaseEntity {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "receipt_asset_id", unique = true)
     private MediaAsset receipt;
+
+    @Embedded
+    private AttendanceReceiptContext receiptContext;
 
     public Attendance(
         Convicted convicted,
@@ -98,6 +102,7 @@ public class Attendance extends BaseEntity {
         this.phone = phone;
         this.employmentStatus = employmentStatus;
         this.photo = photo;
+        this.receiptContext = new AttendanceReceiptContext(convicted, process, district, user);
     }
 
     public void completeReceipt(MediaAsset receipt) {

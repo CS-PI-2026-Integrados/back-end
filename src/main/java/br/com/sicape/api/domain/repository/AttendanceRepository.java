@@ -13,8 +13,10 @@ import org.springframework.data.repository.query.Param;
 import jakarta.persistence.LockModeType;
 import br.com.sicape.api.domain.entity.Attendance;
 import br.com.sicape.api.domain.entity.JudicialDistrict;
+import br.com.sicape.api.domain.entity.MediaAsset;
 
 public interface AttendanceRepository extends BaseRepository<Attendance> {
+    boolean existsByReceiptContextConvictedPhoto(MediaAsset photo);
     @Query("""
         select new br.com.sicape.api.domain.repository.RecentAttendance(
             a.uuid, a.convicted.uuid, a.convicted.name, a.createdAt
@@ -85,7 +87,7 @@ public interface AttendanceRepository extends BaseRepository<Attendance> {
         JudicialDistrict district, Instant start, Instant end);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @EntityGraph(attributePaths = {"photo", "receipt", "convicted", "process", "user"})
+    @EntityGraph(attributePaths = {"photo", "receipt", "convicted", "process", "user", "receiptContext.convictedPhoto"})
     @Query("select a from Attendance a where a.uuid = :uuid and a.district = :district")
     Optional<Attendance> findForReceipt(@Param("uuid") UUID uuid, @Param("district") JudicialDistrict district);
 }
