@@ -13,28 +13,28 @@ import br.com.sicape.api.domain.enums.GroupMeetingStatus;
 
 @JsonInclude(JsonInclude.Include.ALWAYS)
 public record GroupMeetingResponse(
-    UUID uuid,
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    LocalDate date,
-    String subject,
-    GroupMeetingStatus status,
-    Long version,
-    List<GroupMeetingAttendanceResponse> attendance
-) {
+        UUID uuid,
+        @JsonFormat(pattern = "yyyy-MM-dd") LocalDate date,
+        String subject,
+        GroupMeetingStatus status,
+        Long version,
+        List<GroupMeetingAttendanceResponse> attendance) {
     public static GroupMeetingResponse from(GroupMeeting meeting) {
         List<GroupMeetingAttendanceResponse> attendance = meeting.getPresences().stream()
-            .sorted(Comparator
-                .comparing((br.com.sicape.api.domain.entity.GroupMeetingPresence p) -> p.getConvicted().getName(), String.CASE_INSENSITIVE_ORDER)
-                .thenComparing(p -> p.getConvicted().getUuid()))
-            .map(GroupMeetingAttendanceResponse::from)
-            .toList();
+                .sorted(Comparator
+                        .comparing(
+                                (br.com.sicape.api.domain.entity.GroupMeetingPresence p) -> p.getConvicted().getName(),
+                                String.CASE_INSENSITIVE_ORDER)
+                        .thenComparing(
+                                (br.com.sicape.api.domain.entity.GroupMeetingPresence p) -> p.getConvicted().getUuid()))
+                .map(GroupMeetingAttendanceResponse::from)
+                .toList();
         return new GroupMeetingResponse(
-            meeting.getUuid(),
-            meeting.getDate(),
-            meeting.getSubject(),
-            meeting.getStatus(),
-            meeting.getVersion() == null ? 0L : meeting.getVersion(),
-            attendance
-        );
+                meeting.getUuid(),
+                meeting.getDate(),
+                meeting.getSubject(),
+                meeting.getStatus(),
+                meeting.getVersion() == null ? 0L : meeting.getVersion(),
+                attendance);
     }
 }
