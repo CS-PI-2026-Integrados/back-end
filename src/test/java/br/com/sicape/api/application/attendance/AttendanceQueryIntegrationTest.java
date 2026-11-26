@@ -236,6 +236,25 @@ class AttendanceQueryIntegrationTest {
     }
 
     @Test
+    void filtersInclusiveDateRangeAndKeepsResultsWithinAuthenticatedDistrict() {
+        var sameDay = LocalDate.of(2026, 9, 2);
+        var result = listUseCase.execute(null, null, null, sameDay, sameDay, 0, 20, auth);
+
+        assertThat(result.content()).extracting(AttendanceResponse::id)
+            .containsExactly(latest.getUuid(), matching.getUuid());
+        assertThat(listUseCase.execute(
+            null, null, null, sameDay, null, 0, 20, auth
+        ).content()).extracting(AttendanceResponse::id)
+            .containsExactly(latest.getUuid(), matching.getUuid());
+        assertThat(listUseCase.execute(
+            null, null, null, LocalDate.of(2026, 10, 1), null, 0, 20, auth
+        ).content()).isEmpty();
+        assertThat(listUseCase.execute(
+            null, null, null, null, LocalDate.of(2026, 9, 1), 0, 20, auth
+        ).content()).extracting(AttendanceResponse::id).containsExactly(older.getUuid());
+    }
+
+    @Test
     void usesSaoPauloMonthAndYearBoundariesWithExclusiveEnd() {
         var convicted = entityManager.find(Convicted.class, matching.getConvicted().getId());
         var process = entityManager.find(JudicialProcess.class, matching.getProcess().getId());
@@ -265,6 +284,16 @@ class AttendanceQueryIntegrationTest {
             .isInstanceOf(ValidationException.class);
         assertThatThrownBy(() -> listUseCase.execute(null, 9999, null, 0, 20, auth))
             .isInstanceOf(ValidationException.class);
+        assertThatThrownBy(() -> listUseCase.execute(
+            null,
+            null,
+            null,
+            LocalDate.of(2026, 10, 1),
+            LocalDate.of(2026, 9, 30),
+            0,
+            20,
+            auth
+        )).isInstanceOf(ValidationException.class);
     }
 
     @ParameterizedTest

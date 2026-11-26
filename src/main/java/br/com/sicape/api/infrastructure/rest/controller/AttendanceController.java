@@ -2,12 +2,14 @@ package br.com.sicape.api.infrastructure.rest.controller;
 
 import java.io.IOException;
 import java.net.URI;
+import java.time.LocalDate;
 import java.util.UUID;
 
 import org.springframework.http.CacheControl;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -56,13 +58,15 @@ public class AttendanceController {
         @RequestParam(required = false) String search,
         @RequestParam(required = false) @Min(1) @Max(9998) Integer year,
         @RequestParam(required = false) @Min(1) @Max(12) Integer month,
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
         @RequestParam(required = false)
         @Pattern(regexp = "(?i)[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}") String convictedId,
         @RequestParam(defaultValue = "0") @Min(0) int page,
         @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
         @AuthenticationPrincipal AuthContext authContext
     ) {
-        return listUseCase.execute(search, year, month, page, size, authContext,
+        return listUseCase.execute(search, year, month, startDate, endDate, page, size, authContext,
             convictedId == null ? null : UUID.fromString(convictedId));
     }
 
