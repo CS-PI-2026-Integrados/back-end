@@ -1351,6 +1351,65 @@
           "response": []
         },
         {
+          "name": "Consultar agenda e histórico de comparecimentos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/convicted/{{convicted_uuid}}/schedule?from=2026-10-01&to=2026-11-01",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "convicted",
+                "{{convicted_uuid}}",
+                "schedule"
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "2026-10-01"
+                },
+                {
+                  "key": "to",
+                  "value": "2026-11-01"
+                }
+              ]
+            },
+            "description": "Consulta encontros persistidos de grupos e atendimentos realizados do apenado na comarca autenticada. Intervalo de 1 a 31 dias, início inclusivo e fim exclusivo, em America/Sao_Paulo. status: SCHEDULED, COMPLETED ou CANCELLED. participation_status: PRESENTE, AUSENTE, JUSTIFICADO ou null; sem lançamento não implica falta. Nos comparecimentos individuais, id é o UUID do atendimento, a data é a do atendimento e receipt_issued informa se há PDF persistido. Não cria agendamentos futuros nem exige processo atual. Início/fim do vínculo são inclusivos. Participação lançada preserva o histórico após saída do grupo. Remarcação usa a data persistida; não se calculam datas pela frequência. time é null nos grupos porque não há horário persistido por ocorrência. process_id só vem do atendimento, sem inferir processo principal. Ordenação por data, horário (nulos por último), origem e UUID. HTTP 200 inclusive para período vazio; 404 para apenado inexistente ou fora da comarca; 422 para UUID ou intervalo inválido. Cancelados são retornados, mas não marcam o calendário."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Consulta concluída', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  const events = pm.response.json();",
+                  "  pm.test('Lista de eventos sem CPF ou participantes', () => {",
+                  "    pm.expect(events).to.be.an('array');",
+                  "    events.forEach(event => {",
+                  "      pm.expect(event).to.have.property('id');",
+                  "      pm.expect(event.origin).to.be.oneOf(['REFLECTION_GROUP', 'INDIVIDUAL_APPEARANCE']);",
+                  "      pm.expect(event.status).to.be.oneOf(['SCHEDULED', 'COMPLETED', 'CANCELLED']);",
+                  "      pm.expect(event).not.to.have.property('cpf');",
+                  "      pm.expect(event).not.to.have.property('participants');",
+                  "    });",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "Visualizar CPF completo do apenado",
           "request": {
             "method": "GET",
@@ -1801,7 +1860,7 @@
                 }
               ]
             },
-            "description": "Lista presenças da comarca autenticada, incluindo apenados e processos inativos. O filtro opcional convictedId é exato e combinado com search, year e month. A ordenação é por created_at decrescente com desempate pelo ID interno. A página começa em 0 e o tamanho padrão é 20, com limite de 100. Cada registro inclui id (UUID e protocolo do atendimento), process_number quando disponível, receipt_issued e photo_available. Os indicadores descrevem os vínculos das mídias, sem testar o armazenamento. Quando receipt_issued é falso, a presença está registrada e o primeiro GET de /attendance/{uuid}/receipt ainda pode emitir e persistir o PDF. A foto pertence ao atendimento. O CPF completo não é retornado."
+            "description": "Lista presenças da comarca autenticada, incluindo apenados e processos inativos. O filtro opcional convictedId é exato e combinado com search, year e month. A ordenação é por created_at decrescente com desempate pelo ID interno. A página começa em 0 e o tamanho padrão é 20, com limite de 100. Cada registro inclui id (UUID e protocolo do atendimento), process_number quando disponível, receipt_issued e photo_available. Os indicadores descrevem os vínculos das mídias, sem testar o armazenamento. Quando receipt_issued é falso, a presença está registrada e o primeiro GET de /attendance/{uuid}/receipt ainda pode emitir e persistir o PDF. A foto pertence ao atendimento. O CPF completo não é retornado. Novos atendimentos preservam identidade e foto cadastral da data do registro. PDFs emitidos são reutilizados. Primeira emissão de presença antiga sem contexto histórico retorna 409; não se substitui histórico pelo cadastro atual. A data created_at é a do comparecimento, não a da emissão do PDF. Os indicadores de mídia descrevem referências persistidas e não testam o armazenamento. Aplicar db/attendance-receipt-context.sql uma vez antes da publicação em banco existente, se a estrutura não tiver sido criada pelo Hibernate; não preencher o contexto antigo com dados atuais. Foto do atendimento e PDFs já emitidos continuam acessíveis mesmo sem contexto histórico. A troca de foto cadastral preserva arquivos referenciados pelo histórico."
           },
           "event": [
             {
@@ -1923,7 +1982,7 @@
                 }
               ]
             },
-            "description": "disposition=inline. Na primeira consulta gera e persiste o PDF. Precisa das fotos da presença e de cadastro do apenado; foto de cadastro ausente retorna 409. Consultas posteriores reutilizam o PDF."
+            "description": "disposition=inline. Na primeira consulta gera e persiste o PDF. Precisa das fotos da presença e de cadastro do apenado; foto de cadastro ausente retorna 409. Consultas posteriores reutilizam o PDF. Novos atendimentos preservam identidade e foto cadastral da data do registro. PDFs emitidos são reutilizados. Primeira emissão de presença antiga sem contexto histórico retorna 409; não se substitui histórico pelo cadastro atual. A data created_at é a do comparecimento, não a da emissão do PDF. Os indicadores de mídia descrevem referências persistidas e não testam o armazenamento. Aplicar db/attendance-receipt-context.sql uma vez antes da publicação em banco existente, se a estrutura não tiver sido criada pelo Hibernate; não preencher o contexto antigo com dados atuais. Foto do atendimento e PDFs já emitidos continuam acessíveis mesmo sem contexto histórico. A troca de foto cadastral preserva arquivos referenciados pelo histórico."
           },
           "event": [
             {
@@ -1973,7 +2032,7 @@
                 }
               ]
             },
-            "description": "disposition=attachment. Use Send and Download para salvar os bytes do PDF. Mesmos requisitos da visualização do comprovante."
+            "description": "disposition=attachment. Use Send and Download para salvar os bytes do PDF. Mesmos requisitos da visualização do comprovante. Novos atendimentos preservam identidade e foto cadastral da data do registro. PDFs emitidos são reutilizados. Primeira emissão de presença antiga sem contexto histórico retorna 409; não se substitui histórico pelo cadastro atual. A data created_at é a do comparecimento, não a da emissão do PDF. Os indicadores de mídia descrevem referências persistidas e não testam o armazenamento. Aplicar db/attendance-receipt-context.sql uma vez antes da publicação em banco existente, se a estrutura não tiver sido criada pelo Hibernate; não preencher o contexto antigo com dados atuais. Foto do atendimento e PDFs já emitidos continuam acessíveis mesmo sem contexto histórico. A troca de foto cadastral preserva arquivos referenciados pelo histórico."
           },
           "event": [
             {
