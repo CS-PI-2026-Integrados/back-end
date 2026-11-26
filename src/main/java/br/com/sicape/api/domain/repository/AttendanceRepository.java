@@ -18,6 +18,22 @@ import br.com.sicape.api.domain.entity.MediaAsset;
 public interface AttendanceRepository extends BaseRepository<Attendance> {
     boolean existsByReceiptContextConvictedPhoto(MediaAsset photo);
     @Query("""
+        select new br.com.sicape.api.domain.repository.ConvictedAttendanceOccurrence(
+            a.uuid, a.createdAt, p.uuid, case when a.receipt is not null then true else false end
+        )
+        from Attendance a left join a.process p
+        where a.convicted.uuid = :convictedId and a.district = :district
+          and a.createdAt >= :start and a.createdAt < :end
+        order by a.createdAt, a.id
+        """)
+    List<ConvictedAttendanceOccurrence> findSchedule(
+        @Param("convictedId") UUID convictedId,
+        @Param("district") JudicialDistrict district,
+        @Param("start") Instant start,
+        @Param("end") Instant end
+    );
+
+    @Query("""
         select new br.com.sicape.api.domain.repository.RecentAttendance(
             a.uuid, a.convicted.uuid, a.convicted.name, a.createdAt
         )

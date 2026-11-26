@@ -82,6 +82,6 @@ class GetConvictedScheduleUseCaseTest {
     }
 
     private ConvictedScheduleEvent event(Origin origin, LocalDate date, String title, Status status) {
-        return new ConvictedScheduleEvent(UUID.randomUUID(), origin, date, LocalTime.NOON, title, status, null);
+        return new ConvictedScheduleEvent(UUID.randomUUID(), origin, date, LocalTime.NOON, title, status, null, null, null);
     }
 }

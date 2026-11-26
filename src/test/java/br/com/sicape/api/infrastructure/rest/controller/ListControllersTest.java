@@ -240,7 +240,7 @@ class ListControllersTest {
         var from = LocalDate.of(2026, 10, 1);
         var to = from.plusMonths(1);
         var event = new ConvictedScheduleEvent(UUID.randomUUID(), ConvictedScheduleEvent.Origin.REFLECTION_GROUP,
-            from, null, "Grupo", ConvictedScheduleEvent.Status.SCHEDULED, null);
+            from, null, "Grupo", ConvictedScheduleEvent.Status.SCHEDULED, null, null, null);
         when(schedule.execute(id, from, to, null)).thenReturn(List.of(event));
 
         mvc.perform(get("/convicted/{id}/schedule", id).param("from", from.toString()).param("to", to.toString()))
@@ -253,6 +253,32 @@ class ListControllersTest {
         verify(schedule).execute(id, from, to, null);
         mvc.perform(get("/convicted/{id}/schedule", id).param("from", "2026-02-30").param("to", to.toString()))
             .andExpect(status().isUnprocessableEntity());
+        mvc.perform(get("/convicted/1-1-1-1-1/schedule").param("from", from.toString()).param("to", to.toString()))
+            .andExpect(status().isUnprocessableEntity());
+        mvc.perform(get("/convicted/not-a-uuid/schedule").param("from", from.toString()).param("to", to.toString()))
+            .andExpect(status().isUnprocessableEntity());
+    }
+
+    @Test
+    void distinguishesGroupAbsenceFromRecordedAppearanceWithoutPdfAndDoesNotExposeIdentity() throws Exception {
+        UUID id = UUID.randomUUID();
+        var from = LocalDate.of(2026, 10, 1);
+        var to = from.plusMonths(1);
+        var group = new ConvictedScheduleEvent(UUID.randomUUID(), ConvictedScheduleEvent.Origin.REFLECTION_GROUP,
+            from, null, "Grupo", ConvictedScheduleEvent.Status.COMPLETED, null,
+            br.com.sicape.api.domain.enums.GroupPresenceStatus.AUSENTE, null);
+        var individual = new ConvictedScheduleEvent(UUID.randomUUID(), ConvictedScheduleEvent.Origin.INDIVIDUAL_APPEARANCE,
+            from, null, "Comparecimento individual", ConvictedScheduleEvent.Status.COMPLETED, null, null, false);
+        when(schedule.execute(id, from, to, null)).thenReturn(List.of(group, individual));
+        mvc.perform(get("/convicted/{id}/schedule", id).param("from", from.toString()).param("to", to.toString()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].participation_status").value("AUSENTE"))
+            .andExpect(jsonPath("$[0].receipt_issued").value(org.hamcrest.Matchers.nullValue()))
+            .andExpect(jsonPath("$[1].status").value("COMPLETED"))
+            .andExpect(jsonPath("$[1].participation_status").value(org.hamcrest.Matchers.nullValue()))
+            .andExpect(jsonPath("$[1].receipt_issued").value(false))
+            .andExpect(jsonPath("$[0].cpf").doesNotExist())
+            .andExpect(jsonPath("$[0].participants").doesNotExist());
     }
 
     @ParameterizedTest

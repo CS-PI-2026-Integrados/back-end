@@ -46,6 +46,7 @@ import br.com.sicape.api.domain.exception.ValidationException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -108,14 +109,14 @@ public class ConvictedController {
 
     @GetMapping("/{uuid}/schedule")
     public ResponseEntity<List<ConvictedScheduleEvent>> getSchedule(
-        @PathVariable UUID uuid,
+        @PathVariable @Pattern(regexp = "(?i)[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}") String uuid,
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
         @AuthenticationPrincipal AuthContext auth
     ) {
         return ResponseEntity.ok()
             .cacheControl(CacheControl.noStore())
-            .body(getScheduleUseCase.execute(uuid, from, to, auth));
+            .body(getScheduleUseCase.execute(UUID.fromString(uuid), from, to, auth));
     }
 
     @PutMapping("/{uuid}")
