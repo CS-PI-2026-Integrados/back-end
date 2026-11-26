@@ -21,6 +21,7 @@ public interface GroupMeetingRepository extends BaseRepository<GroupMeeting> {
         from GroupMeeting m join m.group g
         left join GroupMeetingPresence p on p.meeting = m and p.convicted = :convicted
         where g.district = :district and m.date >= :from and m.date < :to
+          and (g.deleted = false or m.status <> br.com.sicape.api.domain.enums.GroupMeetingStatus.PENDENTE)
           and (
             p.id is not null
             or exists (

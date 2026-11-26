@@ -1382,7 +1382,7 @@
                 }
               ]
             },
-            "description": "Consulta encontros persistidos de grupos e atendimentos realizados do apenado na comarca autenticada. Intervalo de 1 a 31 dias, início inclusivo e fim exclusivo, em America/Sao_Paulo. status: SCHEDULED, COMPLETED ou CANCELLED. participation_status: PRESENTE, AUSENTE, JUSTIFICADO ou null; sem lançamento não implica falta. Nos comparecimentos individuais, id é o UUID do atendimento, a data é a do atendimento e receipt_issued informa se há PDF persistido. Não cria agendamentos futuros nem exige processo atual. Início/fim do vínculo são inclusivos. Participação lançada preserva o histórico após saída do grupo. Remarcação usa a data persistida; não se calculam datas pela frequência. time é null nos grupos porque não há horário persistido por ocorrência. process_id só vem do atendimento, sem inferir processo principal. Ordenação por data, horário (nulos por último), origem e UUID. HTTP 200 inclusive para período vazio; 404 para apenado inexistente ou fora da comarca; 422 para UUID ou intervalo inválido. Cancelados são retornados, mas não marcam o calendário."
+            "description": "Consulta encontros persistidos de grupos e atendimentos realizados do apenado na comarca autenticada. Intervalo de 1 a 31 dias, início inclusivo e fim exclusivo, em America/Sao_Paulo. status: SCHEDULED, COMPLETED ou CANCELLED. participation_status: PRESENTE, AUSENTE, JUSTIFICADO ou null; sem lançamento não implica falta. Nos comparecimentos individuais, id é o UUID do atendimento, a data é a do atendimento e receipt_issued informa se há PDF persistido. Não cria agendamentos futuros nem exige processo atual. Início/fim do vínculo são inclusivos. Participação lançada preserva o histórico após saída do grupo. Remarcação usa a data persistida; não se calculam datas pela frequência. time é null nos grupos porque não há horário persistido por ocorrência. process_id só vem do atendimento, sem inferir processo principal. Ordenação por data, horário (nulos por último), origem e UUID. HTTP 200 inclusive para período vazio; 404 para apenado inexistente ou fora da comarca; 422 para UUID ou intervalo inválido. Cancelados são retornados, mas não marcam o calendário. Encontros pendentes de grupos excluídos não são retornados. Encontros realizados e cancelados pertinentes ao apenado permanecem no histórico."
           },
           "event": [
             {
@@ -1777,7 +1777,7 @@
                 "attendance"
               ]
             },
-            "description": "Multipart obrigatório: data como Text com Content-Type application/json e photo como File JPEG/PNG até 5 MiB. Apenado e processo precisam estar ativos, na comarca e vinculados entre si. Atualiza endereço, telefone e situação trabalhista do apenado. Salva attendance_uuid. Para emitir o comprovante também é necessária a foto de cadastro do apenado.",
+            "description": "Multipart obrigatório: data como Text com Content-Type application/json e photo como File JPEG/PNG até 5 MiB. Apenado e processo precisam estar ativos, na comarca e vinculados entre si. Atualiza endereço, telefone e situação trabalhista do apenado. Salva attendance_uuid. A foto cadastral do apenado deve estar registrada antes do POST. Se estiver ausente, retorna 422 em convicted_id sem salvar presença, foto ou alterações cadastrais; após cadastrar a foto, a operação pode ser repetida.",
             "body": {
               "mode": "formdata",
               "formdata": [

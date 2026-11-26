@@ -132,6 +132,27 @@ class ConvictedScheduleIntegrationTest {
     }
 
     @Test
+    void excludesPendingMeetingsOfDeletedGroupsButPreservesRecordedAndCancelledHistory() {
+        var removed = group(auth, "Grupo excluído", person, FROM, null);
+        var realized = meeting(removed, FROM);
+        realized.markRealized(List.of(new GroupMeetingPresence(realized, person, null,
+            GroupPresenceStatus.PRESENTE, null, null)));
+        var cancelled = meeting(removed, FROM.plusDays(1));
+        cancelled.markNotRealized();
+        meeting(removed, FROM.plusDays(2));
+        removed.setDeleted(true);
+        var active = meeting(group(auth, "Grupo ativo", person, FROM, null), FROM.plusDays(3));
+        em.flush();
+        em.clear();
+
+        assertThat(events()).extracting(ConvictedScheduleEvent::id)
+            .containsExactly(realized.getUuid(), cancelled.getUuid(), active.getUuid());
+        assertThat(events()).extracting(ConvictedScheduleEvent::status)
+            .containsExactly(Status.COMPLETED, Status.CANCELLED, Status.SCHEDULED);
+        assertThat(events().getFirst().participationStatus()).isEqualTo(GroupPresenceStatus.PRESENTE);
+    }
+
+    @Test
     void doesNotInferAbsenceFromMissingAttendanceOrFromAPastPendingMeeting() {
         var group = group(auth, "Sem lançamento", person, FROM, null);
         meeting(group, FROM);
