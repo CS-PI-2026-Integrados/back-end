@@ -85,14 +85,27 @@ class AttendanceReceiptPersistenceTest {
             address, phone, EmploymentStatus.FORMAL_WORK, photo));
         var id = attendance.getUuid();
         byte[] pdf = "%PDF-1.7".getBytes();
-        when(media.read(photo)).thenReturn(new MediaContent(new byte[]{1, 2, 3}, "image/png"));
-        when(media.read(convictedPhoto)).thenReturn(new MediaContent(new byte[]{4, 5, 6}, "image/png"));
+        when(media.read(argThat(asset -> asset != null && photo.getUuid().equals(asset.getUuid()))))
+            .thenReturn(new MediaContent(new byte[]{1, 2, 3}, "image/png"));
+        when(media.read(argThat(asset -> asset != null && convictedPhoto.getUuid().equals(asset.getUuid()))))
+            .thenReturn(new MediaContent(new byte[]{4, 5, 6}, "image/png"));
         when(media.read(argThat(asset -> asset != null && receipt.getUuid().equals(asset.getUuid()))))
             .thenReturn(new MediaContent(pdf, "application/pdf"));
         when(media.save(pdf, "application/pdf", MediaAssetKind.RECEIPT)).thenReturn(receipt);
         when(renderer.template()).thenReturn("<html>" + "x".repeat(2048) + "</html>");
         when(renderer.logoSha256()).thenReturn("logo-hash");
         when(renderer.render(any(), any(), any())).thenReturn(pdf);
+
+        // Changes made before the first PDF request must not rewrite the attendance identity.
+        convicted.updateName("Nome alterado depois do atendimento");
+        convicted.updateCpf(Cpf.of("39053344705"));
+        var currentPhoto = assets.saveAndFlush(new MediaAsset(UUID.randomUUID(), UUID.randomUUID().toString(),
+            "image/png", 3, MediaAssetKind.PHOTO));
+        convicted.completePhoto(currentPhoto);
+        user.setName("Nome atual do operador");
+        district.setName("Nome atual da comarca");
+        entityManager.flush();
+        entityManager.clear();
 
         var first = useCase.execute(id, new AuthContext(user, district, null));
         assertThat(first.bytes()).isEqualTo(pdf);
@@ -109,6 +122,12 @@ class AttendanceReceiptPersistenceTest {
         assertThat(snapshotCaptor.getValue().phone()).isEqualTo(phone == null ? null : "(11) 98888-1001");
         assertThat(snapshotCaptor.getValue().templateXhtml()).hasSizeGreaterThan(2048);
         assertThat(snapshotCaptor.getValue().logoSha256()).isEqualTo("logo-hash");
+        assertThat(snapshotCaptor.getValue().convictedName()).isEqualTo("Arthur Morgan");
+        assertThat(snapshotCaptor.getValue().convictedCpf()).isEqualTo("111.444.777-35");
+        assertThat(snapshotCaptor.getValue().operatorName()).isEqualTo("Operador");
+        assertThat(snapshotCaptor.getValue().districtName()).isEqualTo("Comarca Central");
+        verify(media).read(argThat(asset -> asset != null && convictedPhoto.getUuid().equals(asset.getUuid())));
+        verify(media, never()).read(argThat(asset -> asset != null && currentPhoto.getUuid().equals(asset.getUuid())));
         verify(media, times(1)).save(pdf, "application/pdf", MediaAssetKind.RECEIPT);
     }
 }
