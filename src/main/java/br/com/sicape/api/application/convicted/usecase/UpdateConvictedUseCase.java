@@ -40,6 +40,15 @@ public class UpdateConvictedUseCase {
     public ConvictedResponse execute(UUID uuid, UpdateConvictedRequest request, AuthContext authContext) {
         Convicted convicted = finder.findForUpdate(uuid, authContext);
         convicted.ensureActive();
+        if (request.isNoProcessDeclaredProvided()) {
+            if (request.getNoProcessDeclared() == null) {
+                throw new ValidationException("no_process_declared", "A declaração não pode ser nula");
+            }
+            if (request.getNoProcessDeclared() && (!convicted.getProcesses().isEmpty()
+                || (request.getProcesses() != null && !request.getProcesses().isEmpty()))) {
+                throw new ValidationException("no_process_declared", "Apenado com processos vinculados não pode declarar ausência de processo");
+            }
+        }
 
         if (request.isNameProvided()) {
             String name = request.getName();
@@ -93,6 +102,9 @@ public class UpdateConvictedUseCase {
             replaceProcesses(convicted, request.getProcesses(), authContext);
         }
 
+        if (request.isNoProcessDeclaredProvided()) {
+            convicted.updateNoProcessDeclared(request.getNoProcessDeclared());
+        }
         return ConvictedResponse.from(repository.save(convicted));
     }
 

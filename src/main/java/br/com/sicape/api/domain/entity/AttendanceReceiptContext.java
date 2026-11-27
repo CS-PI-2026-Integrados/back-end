@@ -42,7 +42,7 @@ public class AttendanceReceiptContext {
         version = 1;
         convictedName = convicted.getName();
         convictedCpf = convicted.getCpf() == null ? null : convicted.getCpf().formatted();
-        processNumber = process.getNumber();
+        processNumber = process == null ? null : process.getNumber();
         districtName = district.getName();
         operatorName = user.getName();
         convictedPhoto = convicted.getPhoto();

@@ -20,8 +20,13 @@ public record AttendanceResponse(
     Instant updatedAt,
     String processNumber,
     boolean receiptIssued,
-    boolean photoAvailable
+    boolean photoAvailable,
+    boolean noProcessDeclared
 ) {
+    public AttendanceResponse(UUID id, UUID convictedId, UUID processId, AddressResponse address, String phone, EmploymentStatus employmentStatus, UUID userId, String userName, Instant createdAt, Instant updatedAt, String processNumber, boolean receiptIssued, boolean photoAvailable) {
+        this(id, convictedId, processId, address, phone, employmentStatus, userId, userName, createdAt, updatedAt, processNumber, receiptIssued, photoAvailable, false);
+    }
+
     public static AttendanceResponse from(Attendance attendance) {
         var process = attendance.getProcess();
         return new AttendanceResponse(
@@ -37,7 +42,8 @@ public record AttendanceResponse(
             attendance.getUpdatedAt(),
             process == null ? null : process.getNumber(),
             attendance.getReceipt() != null,
-            attendance.getPhoto() != null
+            attendance.getPhoto() != null,
+            attendance.isNoProcessDeclared()
         );
     }
 }

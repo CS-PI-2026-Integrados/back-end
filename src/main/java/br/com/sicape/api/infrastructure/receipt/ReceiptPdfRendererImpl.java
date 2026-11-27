@@ -77,7 +77,7 @@ public class ReceiptPdfRendererImpl implements ReceiptPdfRenderer {
         String attendancePhotoDataUri = imageDataUri(snapshot.attendanceId().toString(),
             "presença", attendancePhoto);
         String html = snapshot.templateXhtml();
-        html = field(html, "processNumber", snapshot.processNumber());
+        html = field(html, "processNumber", snapshot.processNumber() == null ? "-" : snapshot.processNumber());
         html = field(html, "convictedName", snapshot.convictedName());
         html = field(html, "convictedCpf", snapshot.convictedCpf());
         html = field(html, "districtName", snapshot.districtName());
