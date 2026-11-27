@@ -54,6 +54,7 @@ class CreateAttendanceUseCaseTest {
         when(processes.findByUuidAndDistrictAndStatus(request.processId(), district, ProcessStatus.ACTIVE))
             .thenReturn(Optional.of(process));
         when(links.existsByConvictedAndProcess(convicted, process)).thenReturn(true);
+        when(convicted.getPhoto()).thenReturn(photo);
         when(media.save(any(), anyString(), eq(MediaAssetKind.PHOTO))).thenReturn(photo);
         when(attendances.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
         useCase = new CreateAttendanceUseCase(convicteds, processes, links, attendances, media,
@@ -105,6 +106,34 @@ class CreateAttendanceUseCaseTest {
         when(links.existsByConvictedAndProcess(any(), any())).thenReturn(false);
         assertThatThrownBy(this::execute).isInstanceOf(ValidationException.class);
         verifyNoInteractions(media);
+    }
+
+    @Test
+    void rejectsMissingCadastralPhotoWithoutRecordingAttendanceOrChangingContactData() {
+        when(convicted.getPhoto()).thenReturn(null);
+
+        assertThatExceptionOfType(ValidationException.class).isThrownBy(this::execute)
+            .satisfies(exception -> assertThat(exception.getFields())
+                .extracting(FieldViolation::field).containsExactly("convicted_id"));
+
+        verifyNoInteractions(media, attendances);
+        verify(convicted, never()).updateAddress(any());
+        verify(convicted, never()).updatePhone(any());
+        verify(convicted, never()).updateEmploymentStatus(any());
+    }
+
+    @Test
+    void allowsRetryAfterRegisteringTheMissingCadastralPhoto() {
+        when(convicted.getPhoto()).thenReturn(null);
+        assertThatThrownBy(this::execute).isInstanceOf(ValidationException.class);
+        when(convicted.getPhoto()).thenReturn(photo);
+
+        execute();
+
+        var captor = ArgumentCaptor.forClass(Attendance.class);
+        verify(attendances).saveAndFlush(captor.capture());
+        assertThat(captor.getValue().getReceiptContext().getConvictedPhoto()).isSameAs(photo);
+        verify(media, times(1)).save(any(), any(), eq(MediaAssetKind.PHOTO));
     }
 
     @Test

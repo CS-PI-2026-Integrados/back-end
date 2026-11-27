@@ -32,6 +32,7 @@ import br.com.sicape.api.domain.exception.ValidationException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -59,11 +60,14 @@ public class AttendanceController {
         @RequestParam(required = false) @Min(1) @Max(12) Integer month,
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+        @RequestParam(required = false)
+        @Pattern(regexp = "(?i)[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}") String convictedId,
         @RequestParam(defaultValue = "0") @Min(0) int page,
         @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
         @AuthenticationPrincipal AuthContext authContext
     ) {
-        return listUseCase.execute(search, year, month, startDate, endDate, page, size, authContext);
+        return listUseCase.execute(search, year, month, startDate, endDate, page, size, authContext,
+            convictedId == null ? null : UUID.fromString(convictedId));
     }
 
     @GetMapping("/years")

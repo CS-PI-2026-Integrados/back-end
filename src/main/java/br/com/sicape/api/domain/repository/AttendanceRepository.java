@@ -13,8 +13,26 @@ import org.springframework.data.repository.query.Param;
 import jakarta.persistence.LockModeType;
 import br.com.sicape.api.domain.entity.Attendance;
 import br.com.sicape.api.domain.entity.JudicialDistrict;
+import br.com.sicape.api.domain.entity.MediaAsset;
 
 public interface AttendanceRepository extends BaseRepository<Attendance> {
+    boolean existsByReceiptContextConvictedPhoto(MediaAsset photo);
+    @Query("""
+        select new br.com.sicape.api.domain.repository.ConvictedAttendanceOccurrence(
+            a.uuid, a.createdAt, p.uuid, case when a.receipt is not null then true else false end
+        )
+        from Attendance a left join a.process p
+        where a.convicted.uuid = :convictedId and a.district = :district
+          and a.createdAt >= :start and a.createdAt < :end
+        order by a.createdAt, a.id
+        """)
+    List<ConvictedAttendanceOccurrence> findSchedule(
+        @Param("convictedId") UUID convictedId,
+        @Param("district") JudicialDistrict district,
+        @Param("start") Instant start,
+        @Param("end") Instant end
+    );
+
     @Query("""
         select new br.com.sicape.api.domain.repository.RecentAttendance(
             a.uuid, a.convicted.uuid, a.convicted.name, a.createdAt
@@ -32,37 +50,40 @@ public interface AttendanceRepository extends BaseRepository<Attendance> {
     @EntityGraph(attributePaths = {"photo", "receipt", "convicted", "process", "user"})
     Optional<Attendance> findByUuidAndDistrict(UUID uuid, JudicialDistrict district);
 
-    @EntityGraph(attributePaths = {"convicted", "process", "user"})
+    @EntityGraph(attributePaths = {"convicted", "process", "user", "photo", "receipt"})
     @Query(
         value = """
-            select a from Attendance a
+            select a from Attendance a left join a.process p
             where a.district = :district
+              and (:convictedId is null or a.convicted.uuid = :convictedId)
               and (:start is null or a.createdAt >= :start)
               and (:end is null or a.createdAt < :end)
               and (
                 :search = ''
                 or lower(a.convicted.name) like concat('%', :search, '%')
                 or (:digits <> '' and a.convicted.cpf.value like concat('%', :digits, '%'))
-                or (:digits <> '' and a.process.normalizedNumber like concat('%', :digits, '%'))
-                or lower(a.process.number) like concat('%', :search, '%')
+                or (:digits <> '' and p.normalizedNumber like concat('%', :digits, '%'))
+                or lower(p.number) like concat('%', :search, '%')
               )
             """,
         countQuery = """
-            select count(a) from Attendance a
+            select count(a) from Attendance a left join a.process p
             where a.district = :district
+              and (:convictedId is null or a.convicted.uuid = :convictedId)
               and (:start is null or a.createdAt >= :start)
               and (:end is null or a.createdAt < :end)
               and (
                 :search = ''
                 or lower(a.convicted.name) like concat('%', :search, '%')
                 or (:digits <> '' and a.convicted.cpf.value like concat('%', :digits, '%'))
-                or (:digits <> '' and a.process.normalizedNumber like concat('%', :digits, '%'))
-                or lower(a.process.number) like concat('%', :search, '%')
+                or (:digits <> '' and p.normalizedNumber like concat('%', :digits, '%'))
+                or lower(p.number) like concat('%', :search, '%')
               )
             """
     )
     Page<Attendance> search(
         @Param("district") JudicialDistrict district,
+        @Param("convictedId") UUID convictedId,
         @Param("search") String search,
         @Param("digits") String digits,
         @Param("start") Instant start,
@@ -82,7 +103,7 @@ public interface AttendanceRepository extends BaseRepository<Attendance> {
         JudicialDistrict district, Instant start, Instant end);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @EntityGraph(attributePaths = {"photo", "receipt", "convicted", "process", "user"})
+    @EntityGraph(attributePaths = {"photo", "receipt", "convicted", "process", "user", "receiptContext.convictedPhoto"})
     @Query("select a from Attendance a where a.uuid = :uuid and a.district = :district")
     Optional<Attendance> findForReceipt(@Param("uuid") UUID uuid, @Param("district") JudicialDistrict district);
 }

@@ -31,6 +31,7 @@ import br.com.sicape.api.domain.enums.ConvictedStatus;
 import br.com.sicape.api.domain.exception.ConflictException;
 import br.com.sicape.api.domain.enums.MediaAssetKind;
 import br.com.sicape.api.domain.repository.ConvictedRepository;
+import br.com.sicape.api.domain.repository.AttendanceRepository;
 import br.com.sicape.api.domain.valueobject.Address;
 import br.com.sicape.api.domain.valueobject.Cpf;
 import br.com.sicape.api.domain.valueobject.Phone;
@@ -41,6 +42,7 @@ class UpdateConvictedPhotoUseCaseTest {
     private final ConvictedFinder finder = mock(ConvictedFinder.class);
     private final ConvictedRepository repository = mock(ConvictedRepository.class);
     private final MediaAssetStore media = mock(MediaAssetStore.class);
+    private final AttendanceRepository attendances = mock(AttendanceRepository.class);
     private final MediaAsset replaced = photo();
     private final MediaAsset created = photo();
     private final UUID convictedId = UUID.randomUUID();
@@ -60,7 +62,8 @@ class UpdateConvictedPhotoUseCaseTest {
             finder,
             repository,
             new PhotoValidator(),
-            media
+            media,
+            attendances
         );
     }
 
@@ -73,6 +76,14 @@ class UpdateConvictedPhotoUseCaseTest {
         order.verify(repository).saveAndFlush(convicted);
         order.verify(media).removeAfterCommit(replaced);
         verify(media, never()).deleteContent(any());
+    }
+
+    @Test
+    void retainsCadastralPhotoReferencedByHistoricalAttendance() {
+        when(attendances.existsByReceiptContextConvictedPhoto(replaced)).thenReturn(true);
+        execute();
+        verify(repository).saveAndFlush(convicted);
+        verify(media, never()).removeAfterCommit(replaced);
     }
 
     @Test

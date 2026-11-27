@@ -17,20 +17,27 @@ public record AttendanceResponse(
     UUID userId,
     String userName,
     Instant createdAt,
-    Instant updatedAt
+    Instant updatedAt,
+    String processNumber,
+    boolean receiptIssued,
+    boolean photoAvailable
 ) {
     public static AttendanceResponse from(Attendance attendance) {
+        var process = attendance.getProcess();
         return new AttendanceResponse(
             attendance.getUuid(),
             attendance.getConvicted().getUuid(),
-            attendance.getProcess().getUuid(),
+            process == null ? null : process.getUuid(),
             AddressResponse.from(attendance.getAddress()),
             attendance.getPhone() == null ? null : attendance.getPhone().value(),
             attendance.getEmploymentStatus(),
             attendance.getUser().getUuid(),
             attendance.getUser().getName(),
             attendance.getCreatedAt(),
-            attendance.getUpdatedAt()
+            attendance.getUpdatedAt(),
+            process == null ? null : process.getNumber(),
+            attendance.getReceipt() != null,
+            attendance.getPhoto() != null
         );
     }
 }

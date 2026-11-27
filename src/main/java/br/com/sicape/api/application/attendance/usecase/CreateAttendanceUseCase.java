@@ -61,6 +61,11 @@ public class CreateAttendanceUseCase {
             throw new ValidationException("process_id", "O processo não está vinculado ao apenado informado");
         }
 
+        if (convicted.getPhoto() == null) {
+            throw new ValidationException("convicted_id",
+                "Cadastre a foto do apenado antes de registrar o atendimento para emitir o comprovante.");
+        }
+
         MediaAsset savedPhoto = media.save(content, contentType, MediaAssetKind.PHOTO);
 
         var attendance = new Attendance(

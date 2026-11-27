@@ -2,6 +2,7 @@ package br.com.sicape.api.application.attendance.usecase;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.UUID;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -33,7 +34,14 @@ public class ListAttendanceUseCase {
     public PageResponse<AttendanceResponse> execute(
         String search, Integer year, Integer month, int page, int size, AuthContext auth
     ) {
-        return execute(search, year, month, null, null, page, size, auth);
+        return execute(search, year, month, null, null, page, size, auth, null);
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<AttendanceResponse> execute(
+        String search, Integer year, Integer month, int page, int size, AuthContext auth, UUID convictedId
+    ) {
+        return execute(search, year, month, null, null, page, size, auth, convictedId);
     }
 
     @Transactional(readOnly = true)
@@ -46,6 +54,21 @@ public class ListAttendanceUseCase {
         int page,
         int size,
         AuthContext auth
+    ) {
+        return execute(search, year, month, startDate, endDate, page, size, auth, null);
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<AttendanceResponse> execute(
+        String search,
+        Integer year,
+        Integer month,
+        LocalDate startDate,
+        LocalDate endDate,
+        int page,
+        int size,
+        AuthContext auth,
+        UUID convictedId
     ) {
         if (year != null && (year < 1 || year > 9998)) {
             throw new ValidationException("year", "Informe um ano entre 1 e 9998");
@@ -80,6 +103,7 @@ public class ListAttendanceUseCase {
 
         var result = repository.search(
             auth.district(),
+            convictedId,
             search,
             digits,
             effectiveStartDate == null ? null : effectiveStartDate.atStartOfDay(zone).toInstant(),

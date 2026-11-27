@@ -21,6 +21,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -59,6 +60,8 @@ import br.com.sicape.api.application.convicted.usecase.CreateConvictedUseCase;
 import br.com.sicape.api.application.convicted.usecase.GetConvictedCpfUseCase;
 import br.com.sicape.api.application.convicted.usecase.GetConvictedPhotoUseCase;
 import br.com.sicape.api.application.convicted.usecase.GetConvictedUseCase;
+import br.com.sicape.api.application.convicted.usecase.GetConvictedScheduleUseCase;
+import br.com.sicape.api.application.convicted.schedule.ConvictedScheduleEvent;
 import br.com.sicape.api.application.convicted.usecase.ListConvictedUseCase;
 import br.com.sicape.api.application.convicted.usecase.UpdateConvictedStatusUseCase;
 import br.com.sicape.api.application.convicted.dto.response.ConvictedResponse;
@@ -93,6 +96,7 @@ class ListControllersTest {
     @MockitoBean private ListAttendanceUseCase listAttendance;
     @MockitoBean private ListAttendanceYearsUseCase listAttendanceYears;
     @MockitoBean private ListAttendanceMonthsUseCase listAttendanceMonths;
+    @MockitoBean private GetConvictedScheduleUseCase schedule;
     @MockitoBean private ListConvictedUseCase listConvicted;
     @MockitoBean private ListProcessUseCase listProcess;
     @MockitoBean private ListUsersUseCase listUsers;
@@ -135,8 +139,9 @@ class ListControllersTest {
 
     @BeforeEach
     void stubLists() {
-        when(listAttendance.execute(nullable(String.class), nullable(Integer.class), nullable(Integer.class), anyInt(), anyInt(), any()))
-            .thenAnswer(invocation -> emptyPage(invocation.getArgument(3), invocation.getArgument(4)));
+        when(listAttendance.execute(nullable(String.class), nullable(Integer.class), nullable(Integer.class),
+            nullable(LocalDate.class), nullable(LocalDate.class), anyInt(), anyInt(), any(), nullable(UUID.class)))
+            .thenAnswer(invocation -> emptyPage(invocation.getArgument(5), invocation.getArgument(6)));
         when(listConvicted.execute(nullable(String.class), nullable(ConvictedStatus.class), anyInt(), anyInt(), any()))
             .thenAnswer(invocation -> emptyPage(invocation.getArgument(2), invocation.getArgument(3)));
         when(listProcess.execute(nullable(String.class), anyInt(), anyInt(), any()))
@@ -196,7 +201,7 @@ class ListControllersTest {
     void forwardsAttendancePeriodAndServesNavigationMetadata() throws Exception {
         mvc.perform(get("/attendance").param("year", "2026").param("month", "9").param("search", "Arthur"))
             .andExpect(status().isOk());
-        verify(listAttendance).execute("Arthur", 2026, 9, 0, 20, null);
+        verify(listAttendance).execute("Arthur", 2026, 9, null, null, 0, 20, null, null);
         when(listAttendanceYears.execute(null)).thenReturn(new AttendanceYearsResponse(List.of(2026, 2025)));
         when(listAttendanceMonths.execute(2026, null)).thenReturn(new AttendanceMonthsResponse(
             List.of(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 25L, 1L, 0L, 0L)));
@@ -213,6 +218,71 @@ class ListControllersTest {
         mvc.perform(get("/attendance").param("month", "13")).andExpect(status().isUnprocessableEntity());
         mvc.perform(get("/attendance/months").param("year", "9999")).andExpect(status().isUnprocessableEntity());
         verifyNoInteractions(listAttendance, listAttendanceMonths);
+    }
+
+    @Test
+    void forwardsExactAttendanceUuidWithDateRangeAndRejectsMalformedFilters() throws Exception {
+        UUID id = UUID.randomUUID();
+        var startDate = LocalDate.of(2026, 9, 1);
+        var endDate = LocalDate.of(2026, 9, 30);
+        mvc.perform(get("/attendance").param("convictedId", id.toString())
+                .param("startDate", startDate.toString()).param("endDate", endDate.toString()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.total_elements").value(0));
+        verify(listAttendance).execute(null, null, null, startDate, endDate, 0, 20, null, id);
+
+        mvc.perform(get("/attendance").param("convictedId", "not-a-uuid"))
+            .andExpect(status().isUnprocessableEntity())
+            .andExpect(jsonPath("$.fields[*].field", hasItem("convictedId")));
+        mvc.perform(get("/attendance").param("convictedId", ""))
+            .andExpect(status().isUnprocessableEntity());
+    }
+
+    @Test
+    void serializesScheduleDatesAndForwardsTheRequestedPeriod() throws Exception {
+        UUID id = UUID.randomUUID();
+        var from = LocalDate.of(2026, 10, 1);
+        var to = from.plusMonths(1);
+        var event = new ConvictedScheduleEvent(UUID.randomUUID(), ConvictedScheduleEvent.Origin.REFLECTION_GROUP,
+            from, null, "Grupo", ConvictedScheduleEvent.Status.SCHEDULED, null, null, null);
+        when(schedule.execute(id, from, to, null)).thenReturn(List.of(event));
+
+        mvc.perform(get("/convicted/{id}/schedule", id).param("from", from.toString()).param("to", to.toString()))
+            .andExpect(status().isOk())
+            .andExpect(header().string("Cache-Control", "no-store"))
+            .andExpect(jsonPath("$[0].id").value(event.id().toString()))
+            .andExpect(jsonPath("$[0].origin").value("REFLECTION_GROUP"))
+            .andExpect(jsonPath("$[0].date").value(from.toString()))
+            .andExpect(jsonPath("$[0].status").value("SCHEDULED"));
+        verify(schedule).execute(id, from, to, null);
+        mvc.perform(get("/convicted/{id}/schedule", id).param("from", "2026-02-30").param("to", to.toString()))
+            .andExpect(status().isUnprocessableEntity());
+        mvc.perform(get("/convicted/1-1-1-1-1/schedule").param("from", from.toString()).param("to", to.toString()))
+            .andExpect(status().isUnprocessableEntity());
+        mvc.perform(get("/convicted/not-a-uuid/schedule").param("from", from.toString()).param("to", to.toString()))
+            .andExpect(status().isUnprocessableEntity());
+    }
+
+    @Test
+    void distinguishesGroupAbsenceFromRecordedAppearanceWithoutPdfAndDoesNotExposeIdentity() throws Exception {
+        UUID id = UUID.randomUUID();
+        var from = LocalDate.of(2026, 10, 1);
+        var to = from.plusMonths(1);
+        var group = new ConvictedScheduleEvent(UUID.randomUUID(), ConvictedScheduleEvent.Origin.REFLECTION_GROUP,
+            from, null, "Grupo", ConvictedScheduleEvent.Status.COMPLETED, null,
+            br.com.sicape.api.domain.enums.GroupPresenceStatus.AUSENTE, null);
+        var individual = new ConvictedScheduleEvent(UUID.randomUUID(), ConvictedScheduleEvent.Origin.INDIVIDUAL_APPEARANCE,
+            from, null, "Comparecimento individual", ConvictedScheduleEvent.Status.COMPLETED, null, null, false);
+        when(schedule.execute(id, from, to, null)).thenReturn(List.of(group, individual));
+        mvc.perform(get("/convicted/{id}/schedule", id).param("from", from.toString()).param("to", to.toString()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].participation_status").value("AUSENTE"))
+            .andExpect(jsonPath("$[0].receipt_issued").value(org.hamcrest.Matchers.nullValue()))
+            .andExpect(jsonPath("$[1].status").value("COMPLETED"))
+            .andExpect(jsonPath("$[1].participation_status").value(org.hamcrest.Matchers.nullValue()))
+            .andExpect(jsonPath("$[1].receipt_issued").value(false))
+            .andExpect(jsonPath("$[0].cpf").doesNotExist())
+            .andExpect(jsonPath("$[0].participants").doesNotExist());
     }
 
     @ParameterizedTest
@@ -336,7 +406,7 @@ class ListControllersTest {
 
     private void verifyList(String path, String search, int page, int size) {
         switch (path) {
-            case "/attendance" -> verify(listAttendance).execute(search, null, null, page, size, null);
+            case "/attendance" -> verify(listAttendance).execute(search, null, null, null, null, page, size, null, null);
             case "/convicted" -> verify(listConvicted).execute(search, null, page, size, null);
             case "/processes" -> verify(listProcess).execute(search, page, size, null);
             case "/users", "/usuarios" -> verify(listUsers).execute(search, page, size, null);

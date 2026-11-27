@@ -121,7 +121,7 @@ class GetAttendanceReceiptUseCaseTest {
 
     @Test
     void missingConvictedPhotoBlocksGenerationBeforeReadingStorage() {
-        when(convicted.getPhoto()).thenReturn(null);
+        ReflectionTestUtils.setField(attendance.getReceiptContext(), "convictedPhoto", null);
         assertThatThrownBy(() -> useCase.execute(attendance.getUuid(), auth))
             .isInstanceOf(ConflictException.class)
             .hasMessageContaining("foto de cadastro");
@@ -129,6 +129,15 @@ class GetAttendanceReceiptUseCaseTest {
         verify(media, never()).save(any(), any(), any());
         verifyNoInteractions(renderer);
         assertThat(attendance.getReceipt()).isNull();
+    }
+
+    @Test
+    void missingHistoricalContextBlocksFirstIssuanceInsteadOfUsingCurrentIdentity() {
+        ReflectionTestUtils.setField(attendance, "receiptContext", null);
+        assertThatThrownBy(() -> useCase.execute(attendance.getUuid(), auth))
+            .isInstanceOf(ConflictException.class).hasMessageContaining("dados históricos");
+        verifyNoInteractions(renderer);
+        verify(media, never()).save(any(), any(), any());
     }
 
     @Test
@@ -149,6 +158,17 @@ class GetAttendanceReceiptUseCaseTest {
             .isInstanceOf(IllegalStateException.class);
         verify(media, never()).save(any(), any(), any());
         assertThat(attendance.getReceipt()).isNull();
+    }
+
+    @Test
+    void returnsAnAlreadyIssuedLegacyPdfEvenWithoutHistoricalContext() {
+        var receipt = new MediaAsset(UUID.randomUUID(), UUID.randomUUID().toString(),
+            "application/pdf", pdf.length, MediaAssetKind.RECEIPT);
+        attendance.completeReceipt(receipt);
+        ReflectionTestUtils.setField(attendance, "receiptContext", null);
+        when(media.read(receipt)).thenReturn(new MediaContent(pdf, "application/pdf"));
+        assertThat(useCase.execute(attendance.getUuid(), auth).bytes()).isEqualTo(pdf);
+        verifyNoInteractions(renderer);
     }
 
     @Test

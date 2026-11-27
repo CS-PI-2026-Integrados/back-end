@@ -7,6 +7,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,7 @@ import java.time.ZoneId;
 import br.com.sicape.api.application.oauth.AuthContext;
 import br.com.sicape.api.domain.entity.Attendance;
 import br.com.sicape.api.domain.entity.Convicted;
+import br.com.sicape.api.domain.entity.ConvictedProcess;
 import br.com.sicape.api.domain.entity.JudicialDistrict;
 import br.com.sicape.api.domain.entity.JudicialProcess;
 import br.com.sicape.api.domain.entity.MediaAsset;
@@ -114,6 +116,72 @@ class AttendanceQueryIntegrationTest {
                 .extracting(AttendanceResponse::id).containsExactly(latest.getUuid());
             assertThat(result.totalElements()).as("Total da busca por %s", search).isEqualTo(2);
             assertThat(result.totalPages()).isEqualTo(2);
+        }
+    }
+
+    @Test
+    void filtersByExactConvictedBeforeCountingAndRetainsHistoryWithoutCurrentLinks() {
+        var convictedId = matching.getConvicted().getUuid();
+        var process = entityManager.find(JudicialProcess.class, matching.getProcess().getId());
+        var homonym = createConvicted("Arthur Morgan", "86288366757", auth);
+        createAttendance(homonym, process, auth, "2026-09-02T12:00:00Z");
+        entityManager.clear();
+
+        var first = listUseCase.execute("Arthur", 2026, 9, 0, 1, auth, convictedId);
+        var second = listUseCase.execute(null, 2026, 9, 1, 1, auth, convictedId);
+
+        assertThat(first.totalElements()).isEqualTo(2);
+        assertThat(first.totalPages()).isEqualTo(2);
+        assertThat(first.content()).extracting(AttendanceResponse::id).containsExactly(latest.getUuid());
+        assertThat(second.content()).extracting(AttendanceResponse::id).containsExactly(matching.getUuid());
+        assertThat(listUseCase.execute("Maria", null, null, 0, 20, auth, convictedId).content()).isEmpty();
+        assertThat(listUseCase.execute(null, null, null, 0, 20, auth, foreign.getConvicted().getUuid()).totalElements())
+            .isZero();
+        assertThat(listUseCase.execute(null, null, null, 0, 20, auth, UUID.randomUUID()).content()).isEmpty();
+
+        var record = first.content().getFirst();
+        assertThat(record.processNumber()).isEqualTo(process.getNumber());
+        assertThat(record.photoAvailable()).isTrue();
+        assertThat(record.receiptIssued()).isFalse();
+
+        var saved = entityManager.find(Attendance.class, latest.getId());
+        saved.completeReceipt(entityManager.persistAndFlush(new MediaAsset(UUID.randomUUID(),
+            UUID.randomUUID().toString(), "application/pdf", 3, MediaAssetKind.RECEIPT)));
+        entityManager.flush();
+        entityManager.clear();
+        assertThat(listUseCase.execute(null, null, null, 0, 1, auth, convictedId).content().getFirst().receiptIssued())
+            .isTrue();
+    }
+
+    @Test
+    void preservesMultipleProcessAttendanceAfterRemovingActualCurrentLinks() {
+        var person = entityManager.find(Convicted.class, matching.getConvicted().getId());
+        var original = entityManager.find(JudicialProcess.class, matching.getProcess().getId());
+        var second = entityManager.persistAndFlush(new JudicialProcess(
+            "0005555-11.2026.8.26.0001", ProcessStatus.ACTIVE, auth.district()));
+        person.replaceProcesses(List.of(new ConvictedProcess(person, original, true),
+            new ConvictedProcess(person, second, false)));
+        var anotherProcessAttendance = createAttendance(person, second, auth, "2026-09-03T12:00:00Z");
+        entityManager.flush();
+        var personId = person.getId();
+        var uuid = person.getUuid();
+
+        for (int numberOfLinks : new int[]{2, 1, 0}) {
+            entityManager.clear();
+            person = entityManager.find(Convicted.class, personId);
+            assertThat(person.getProcesses()).hasSize(numberOfLinks);
+            var page = listUseCase.execute(null, null, null, 0, 2, auth, uuid);
+            assertThat(page.totalElements()).isEqualTo(3);
+            assertThat(page.totalPages()).isEqualTo(2);
+            assertThat(page.content()).extracting(AttendanceResponse::id)
+                .containsExactly(anotherProcessAttendance.getUuid(), latest.getUuid());
+            assertThat(page.content()).extracting(AttendanceResponse::processNumber)
+                .containsExactly(second.getNumber(), original.getNumber());
+            assertThat(getUseCase.execute(matching.getUuid(), auth).convictedId()).isEqualTo(uuid);
+            if (numberOfLinks > 0) {
+                person.getProcesses().removeLast();
+                entityManager.flush();
+            }
         }
     }
 

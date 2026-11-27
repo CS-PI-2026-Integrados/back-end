@@ -26,18 +26,19 @@ public record ReceiptSnapshot(
         String templateXhtml,
         String logoSha256
     ) {
+        var context = attendance.getReceiptContext();
         return new ReceiptSnapshot(
             attendance.getUuid(),
             attendance.getCreatedAt(),
             attendance.getAddress().formatted(),
             attendance.getPhone() == null ? null : attendance.getPhone().formatted(),
             attendance.getEmploymentStatus().displayName(),
-            attendance.getConvicted().getName(),
-            attendance.getConvicted().getCpf().formatted(),
-            attendance.getProcess().getNumber(),
-            attendance.getDistrict().getName(),
+            context.getConvictedName(),
+            context.getConvictedCpf(),
+            context.getProcessNumber(),
+            context.getDistrictName(),
             "Vara de Execuções Penais", // Mantido hardcode até incluirmos uma entidade de configuração por comarca
-            attendance.getUser().getName(),
+            context.getOperatorName(),
             attendance.getUuid().toString(),
             templateXhtml,
             logoSha256
