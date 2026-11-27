@@ -68,6 +68,7 @@ import br.com.sicape.api.application.convicted.dto.response.ConvictedResponse;
 import br.com.sicape.api.application.convicted.usecase.UpdateConvictedPhotoUseCase;
 import br.com.sicape.api.application.convicted.usecase.UpdateConvictedUseCase;
 import br.com.sicape.api.application.process.usecase.ListProcessUseCase;
+import br.com.sicape.api.application.process.usecase.CreateProcessUseCase;
 import br.com.sicape.api.application.user.usecase.CreateUserUseCase;
 import br.com.sicape.api.application.user.usecase.DeleteUserUseCase;
 import br.com.sicape.api.application.user.usecase.GetUserUseCase;
@@ -99,6 +100,7 @@ class ListControllersTest {
     @MockitoBean private GetConvictedScheduleUseCase schedule;
     @MockitoBean private ListConvictedUseCase listConvicted;
     @MockitoBean private ListProcessUseCase listProcess;
+    @MockitoBean private CreateProcessUseCase createProcess;
     @MockitoBean private ListUsersUseCase listUsers;
     @MockitoBean private CreateAttendanceUseCase createAttendance;
     @MockitoBean private CreateConvictedUseCase createConvicted;
@@ -382,6 +384,28 @@ class ListControllersTest {
             .andExpect(status().isUnprocessableEntity())
             .andExpect(jsonPath("$.fields[*].field", hasItem("address.street")));
         verifyNoInteractions(createConvicted);
+    }
+
+    @Test
+    void createsProcessThroughExistingProcessController() throws Exception {
+        var id = UUID.randomUUID();
+        when(createProcess.execute(any(), any())).thenReturn(
+            new br.com.sicape.api.application.process.dto.response.ProcessListItemResponse(
+                id, "0001234-56.2026.8.26.0001",
+                br.com.sicape.api.domain.enums.ProcessStatus.ACTIVE, 0, List.of()));
+        mvc.perform(post("/processes").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"number\":\"0001234-56.2026.8.26.0001\"}"))
+            .andExpect(status().isCreated())
+            .andExpect(header().string("Location", "/api/processes/" + id))
+            .andExpect(jsonPath("$.id").value(id.toString()));
+    }
+
+    @Test
+    void rejectsMissingProcessNumber() throws Exception {
+        mvc.perform(post("/processes").contentType(MediaType.APPLICATION_JSON).content("{}"))
+            .andExpect(status().isUnprocessableEntity())
+            .andExpect(jsonPath("$.fields[*].field", hasItem("number")));
+        verifyNoInteractions(createProcess);
     }
 
     @Test
