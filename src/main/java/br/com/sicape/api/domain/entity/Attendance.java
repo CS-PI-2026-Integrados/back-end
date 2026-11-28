@@ -25,9 +25,12 @@ public class Attendance extends BaseEntity {
     @JoinColumn(nullable = false, updatable = false)
     private Convicted convicted;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(nullable = false, updatable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(updatable = false)
     private JudicialProcess process;
+
+    @Column(nullable = false, updatable = false)
+    private boolean noProcessDeclared;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(nullable = false, updatable = false)
@@ -72,12 +75,22 @@ public class Attendance extends BaseEntity {
         EmploymentStatus employmentStatus,
         MediaAsset photo
     ) {
+        this(convicted, process, district, user, address, phone, employmentStatus, photo, false);
+    }
+
+    public Attendance(Convicted convicted, JudicialProcess process, JudicialDistrict district,
+        User user, Address address, Phone phone, EmploymentStatus employmentStatus,
+        MediaAsset photo, boolean noProcessDeclared) {
         if (convicted == null) {
             throw new IllegalArgumentException("O condenado é obrigatório");
         }
-        if (process == null) {
-            throw new IllegalArgumentException("O processo é obrigatório");
+        if ((process == null) != noProcessDeclared) {
+            throw new IllegalArgumentException("Informe um processo ou declare sua ausência");
         }
+        if (noProcessDeclared && !convicted.getProcesses().isEmpty()) {
+            throw new IllegalArgumentException("Apenado com processos vinculados não pode declarar ausência de processo");
+        }
+        this.noProcessDeclared = noProcessDeclared;
         if (district == null) {
             throw new IllegalArgumentException("A comarca é obrigatória");
         }

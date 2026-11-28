@@ -35,6 +35,9 @@ public class CreateConvictedUseCase {
 
     @Transactional
     public ConvictedResponse execute(CreateConvictedRequest request, AuthContext authContext) {
+        if (request.noProcessDeclared() && request.processes() != null && !request.processes().isEmpty()) {
+            throw new ValidationException("no_process_declared", "Não é possível declarar ausência e informar processos");
+        }
         Cpf cpf = toCpf(request.cpf());
         Phone phone = toPhone(request.phone());
         if (repository.existsByCpf(cpf)) {
@@ -62,6 +65,7 @@ public class CreateConvictedUseCase {
             convicted.replaceProcesses(buildProcesses(request.processes(), convicted, authContext));
         }
 
+        convicted.updateNoProcessDeclared(request.noProcessDeclared());
         return ConvictedResponse.from(repository.save(convicted));
     }
 

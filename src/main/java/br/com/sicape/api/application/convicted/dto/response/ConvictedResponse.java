@@ -20,8 +20,13 @@ public record ConvictedResponse(
     AddressResponse address,
     EmploymentStatus employmentStatus,
     ConvictedStatus status,
-    List<ProcessResponse> processes
+    List<ProcessResponse> processes,
+    boolean noProcessDeclared
 ) {
+    public ConvictedResponse(UUID id, String name, String cpf, LocalDate birthDate, String phone, AddressResponse address, EmploymentStatus employmentStatus, ConvictedStatus status, List<ProcessResponse> processes) {
+        this(id, name, cpf, birthDate, phone, address, employmentStatus, status, processes, false);
+    }
+
     public static ConvictedResponse from(Convicted convicted) {
         return new ConvictedResponse(
             convicted.getUuid(),
@@ -40,7 +45,8 @@ public record ConvictedResponse(
                     link.getProcess().getStatus(),
                     link.isPrincipal()
                 ))
-                .toList()
+                .toList(),
+            convicted.isNoProcessDeclared()
         );
     }
 }

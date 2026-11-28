@@ -7,6 +7,7 @@ import br.com.sicape.api.application.common.media.MediaAssetStore;
 import br.com.sicape.api.application.common.validation.PhotoValidator;
 import br.com.sicape.api.application.oauth.AuthContext;
 import br.com.sicape.api.domain.entity.Attendance;
+import br.com.sicape.api.domain.entity.JudicialProcess;
 import br.com.sicape.api.domain.entity.MediaAsset;
 import br.com.sicape.api.domain.enums.ConvictedStatus;
 import br.com.sicape.api.domain.enums.MediaAssetKind;
@@ -53,12 +54,21 @@ public class CreateAttendanceUseCase {
         var convicted = convicteds
             .findForAttendance(request.convictedId(), auth.district(), ConvictedStatus.ACTIVE)
             .orElseThrow(() -> new ResourceNotFoundException("Apenado ativo não encontrado."));
-        var process = processes
-            .findByUuidAndDistrictAndStatus(request.processId(), auth.district(), ProcessStatus.ACTIVE)
-            .orElseThrow(() -> new ResourceNotFoundException("Processo ativo não encontrado."));
-
-        if (!links.existsByConvictedAndProcess(convicted, process)) {
-            throw new ValidationException("process_id", "O processo não está vinculado ao apenado informado");
+        JudicialProcess process = null;
+        if (request.noProcessDeclared()) {
+            if (request.processId() != null || !convicted.getProcesses().isEmpty()) {
+                throw new ValidationException("no_process_declared", "A ausência só pode ser declarada sem processos vinculados ou informados");
+            }
+        } else {
+            if (request.processId() == null) {
+                throw new ValidationException("process_id", "Informe um processo ou declare sua ausência");
+            }
+            process = processes
+                .findByUuidAndDistrictAndStatus(request.processId(), auth.district(), ProcessStatus.ACTIVE)
+                .orElseThrow(() -> new ResourceNotFoundException("Processo ativo não encontrado."));
+            if (!links.existsByConvictedAndProcess(convicted, process)) {
+                throw new ValidationException("process_id", "O processo não está vinculado ao apenado informado");
+            }
         }
 
         if (convicted.getPhoto() == null) {
@@ -76,8 +86,12 @@ public class CreateAttendanceUseCase {
             address,
             phone,
             request.employmentStatus(),
-            savedPhoto
+            savedPhoto,
+            request.noProcessDeclared()
         );
+        if (request.noProcessDeclared()) {
+            convicted.updateNoProcessDeclared(true);
+        }
         convicted.updateAddress(address);
         convicted.updatePhone(phone);
         convicted.updateEmploymentStatus(request.employmentStatus());

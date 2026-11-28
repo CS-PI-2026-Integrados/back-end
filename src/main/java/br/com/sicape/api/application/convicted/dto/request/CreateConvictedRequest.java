@@ -17,5 +17,11 @@ public record CreateConvictedRequest(
     String phone,
     @NotNull(message = "O endereço é obrigatório") @Valid AddressRequest address,
     EmploymentStatus employmentStatus,
-    List<ConvictedProcessRequest> processes
-) {}
+    List<ConvictedProcessRequest> processes,
+    boolean noProcessDeclared
+) {
+    public CreateConvictedRequest(String name, String cpf, LocalDate birthDate, String phone,
+        AddressRequest address, EmploymentStatus employmentStatus, List<ConvictedProcessRequest> processes) {
+        this(name, cpf, birthDate, phone, address, employmentStatus, processes, false);
+    }
+}

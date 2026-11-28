@@ -57,6 +57,9 @@ public class Convicted extends BaseEntity {
     @Column(nullable = false, length = 30)
     private ConvictedStatus status = ConvictedStatus.ACTIVE;
 
+    @Column(nullable = false)
+    private boolean noProcessDeclared;
+
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "photo_asset_id", unique = true)
     private MediaAsset photo;
@@ -141,6 +144,17 @@ public class Convicted extends BaseEntity {
         }
         this.processes.clear();
         this.processes.addAll(newProcesses);
+        if (!newProcesses.isEmpty()) {
+            this.noProcessDeclared = false;
+        }
+    }
+
+    public void updateNoProcessDeclared(boolean declared) {
+        ensureActive();
+        if (declared && !processes.isEmpty()) {
+            throw new IllegalArgumentException("Apenado com processos vinculados não pode declarar ausência de processo");
+        }
+        this.noProcessDeclared = declared;
     }
 
     public boolean hasActiveProcess() {

@@ -10,6 +10,15 @@ import lombok.Getter;
 
 @Getter
 public class UpdateConvictedRequest {
+    private Boolean noProcessDeclared;
+    private boolean noProcessDeclaredProvided;
+
+    @JsonSetter("no_process_declared")
+    public void setNoProcessDeclared(Boolean value) {
+        this.noProcessDeclared = value;
+        this.noProcessDeclaredProvided = true;
+    }
+
     private String name;
     private String cpf;
     private LocalDate birthDate;
